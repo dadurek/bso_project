@@ -26,8 +26,8 @@ Różnice działania mechanizmu ochrony stosu w tych dwóch systemach jest margi
 
 Przyjęte założenia:
 
-* kompilacja na 32-bit = `-m32`
-* ASLR - wyłączone = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space`
+* Kompilacja na 32-bit = `-m32`
+* Wyłączone ASLR = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space`
 * Wyłączone NX = `-z execstack`
 * Wyłączone Stack Cannary = `-fno-stack-protector`
 
@@ -69,7 +69,7 @@ Następnym krokiem jest odnalezienie adresu `buffer`. Adres jest stały, poniewa
 
 ![](pictures/1_buffer_addres.png)
 
-Shellcode można pobrać ze strony [shell-storm.org](http://shell-storm.org/shellcode/files/shellcode-752.php). W Moim przypadku używam shellcodu w postaci ASM, napisany dla architektury x86.
+Shellcode można pobrać ze strony [shell-storm.org](http://shell-storm.org/shellcode/files/shellcode-752.php). W przypadku tego exploita używam shellcodu w postaci ASM, napisany dla architektury x86.
 
 ```asm
 xor ecx, ecx
@@ -149,10 +149,10 @@ Tak jak wspomniałem w `wady i zalety`, pomimo właczonej ochorny `NX`, dlaej is
 
 Przyjęte założenia:
 
-* kompilacja na 32-bit = `-m32`
-*   ASLR - wyłączone = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space`
-*   Włączone NX
-*   Wyłączone Stack Cannary = `-fno-stack-protector`
+* Kompilacja na 32-bit = `-m32`
+* Wyłączone ASLR = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space`
+* Włączone NX
+* Wyłączone Stack Cannary = `-fno-stack-protector`
 
 Kod podatnej aplikacji. Tak jak w poprzedniej wersji, podatnością jest `gets()`. Zmienione zostały jedynie flagi kompilacji.
 
@@ -192,7 +192,7 @@ Do odnalezienia adresu `system()` posłuzyłem się `gdb`. Po zbreakowaniu się 
 
 ![](pictures/2_system_adr.png)
 
-Aby odnależć adres `/bin/sh` posłużyłem się komendą `ldd vuln-protected`, która zwraca jaki linker używa aplikacja wraz z adresem poczatku w pamieci linkera. Użyłem równiez koemndy `strings -a -t x /lib/i386-linux-gnu/libc.so.6 | grep '/bin/sh'` aby odnależć adres 	`/bin/sh` w libc. 
+Aby odnależć adres `/bin/sh` posłużyłem się komendą `ldd vuln-protected`, która zwraca jaki linker używa aplikacja wraz z adresem poczatku w pamieci linkera. Użyłem równiez koemndy `strings -a -t x /lib/i386-linux-gnu/libc.so.6 | grep '/bin/sh'` aby odnależć adres `/bin/sh` w libc. 
 
 ![](pictures/2_libc_binsh.png)
 
@@ -205,7 +205,7 @@ Aby sprawdzić, czy odpowiednio wyliczyłem adres w `gdb` sprawdziłem co znajdu
 
 ![](pictures/2_gdb_addres_binsh.png)
 
-Syscall `exit()` nie jest obowiązkowy, bez tego dalej uda się nam dostać shella. Jednakże wychodząc z shella otrzymamy `SIGSEGV`. Aby wyjśc z shella bez tego sygnału, należy umieścić na stacku równiez adres `exit()`. Adres ten odnalazłem w identyczny sposób, jak adres `system()`. 
+Syscall `exit()` nie jest obowiązkowy. Bez tego dalej uda się nam uzyskać shella. Jednakże wychodząc z shella otrzymamy `SIGSEGV`. Aby wyjśc z powłoki bez tego sygnału, należy umieścić na stacku równiez adres `exit()`. Adres ten odnalazłem w identyczny sposób, jak adres `system()`. 
 
 Zatem finalny wysyłany payload jest postaci:
 
@@ -243,4 +243,4 @@ Jak widać na poniższym screenshot-cie, udało się dostać shella, pomimo wł�
 
 ## 6. Podsumowanie
 
-Metoda zabezpieczania stosu przed jego wykonaniem jest dobrą metodą, utrudnia exploitacje programu. Niestety jednak, nie zapewnie 100% skuteczności. Metoda ta powinna być jedną z wielu sposobów na chronienie aplikacji.
+Metoda zabezpieczania stosu przed jego wykonaniem jest dobrą metodą. Utrudna ona exploitacje, gdyż niemożliwe jest wykonanie kodu ze storu. Niestety jednak nie zapewnia ona 100% bezpieczeństwa. Dalej jesteśmy w tanie modyfikować stos, przez co możemy użyć innych metod exploitacji aplikacji, takich jak `ROP` lub `ret2libc`. Metoda ta powinna być jedną z wielu sposobów na chronienie aplikacji.
