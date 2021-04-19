@@ -2,20 +2,26 @@
 
 ## 1. Opis 
 
-`Executable space protection`, w bezpieczeństwie systemów i oprogramowania, odnosi się do oznaczania regionów pamięci jako `niewykonywalen` - `non-executable`. W wyniku takiego oznaczenia wykonywanie kodu maszynowego z regionu tak oznaczonego zakończy się wzniesieniem wyjątku. Technologia, która najczęściej odpowiada za zabezpieczenie stacka to `NX bit`, która jest funkcją `Memory Managment Unit`. Jest to technologia wspierana sprzętowo, dlatego też używanie tej technologi nie zmienia wydajności aplikacji. W proceorach AMD technologia nazwana jest jako "Enhanced Virus Protection", u Intela natomiast jako "XD (eXecute Disabled) bit". MMU jest kontrolowane przez kernel - to on decyduje jakie elementy kodu dostają uprawnienia `execution`. Można więc stwierdzić, że to system kontroluje czy stack jest wykonywalny, lub nie.
+`Executable space protection`, w bezpieczeństwie systemów i oprogramowania, odnosi się do oznaczania regionów pamięci jako `niewykonywalen` - `non-executable`. W wyniku takiego oznaczenia wykonywanie kodu maszynowego z regionu tak oznaczonego zakończy się wzniesieniem wyjątku. Technologia, która najczęściej odpowiada za zabezpieczenie stacka to `NX bit`, która jest funkcją `Memory Managment Unit`. MMU jest kontrolowane przez kernel - to on decyduje jakie elementy kodu dostają uprawnienia `execution`. Można więc stwierdzić, że to system kontroluje czy stack jest wykonywalny, lub nie.
 
-Taka metoda zabezpieczania aplikacji powoduje, że w przypadku ataków BOF, podczas których najczęściej wstrzykujemy kod na stos, który następnie chcemy wykonać jest niemożliwe. Przykład takiego exploitu zadenmonstruję w punkcie `2.1`.
+## 2. Wady i zalety
 
+Technologia `NX bit` została zaimplementowana w hardwarowo. W proceorach AMD technologia nazwana jest jako "Enhanced Virus Protection", u Intela natomiast jako "XD (eXecute Disabled) bit". Zatem jako że jest to metoda wspierana sprzętowo, używanie jej nie zmienia wydajności aplikacji. Występują jednak również implementacje systemowe, które to mogą spowalniać aplikację.
 
-NX jest jedną z wielu sposobów zapobiegania przed atakami typu BOF. Nie jest to jednak metoda, która całkowicie zapobiega takim atakom - można powiedzieć że żadna technika nie jest w stanie w 100% zapewnić bezpieczeństwo aplikacji. 
+Kolejną zaletą używania `NX` jest to, że w przypadku ataków BOF, podczas których najczęściej wstrzykujemy kod na stos, który następnie chcemy wykonać jest niemożliwe. Przykład takiego exploitu zadenmonstruję w punkcie `5.1`.
 
-Wykorzystywanie samej metody NX w zabezpieczeniu aplikacji powinno być jedna z wielu metod. NX zapobiega przed wykonaniem kodu maszynowego ze stosu, jednakże należy pamiętać, że dalej jesteśmy w stanie modyfikować stos za pomocą niebezpiecznych funkcji typu `gets()` lub `strcpy()`. Procesor widząc obszar pamieci oznaczony jako `non-executable` wznosi tylko wyjątek i powoduje koniec programu. Przykładem ataku, który pomimo niewykonywalnego stosu jest w stanie exploitować program  jest `ret2libc`. Celem takiego ataku nie jest wstrzyknięcie i wykonanie złośliwego kodu, a wywołanie funkcji bibliotecznych podczas wychodzenia z funkcji, wktorej nastąpiło przepełnienie - więcej o tym ataku w punkcie `2.2`.
+Należy jednak pamiętać, że wykorzystywanie samej metody NX w zabezpieczeniu aplikacji nie zapewnia bezpieczeństwa\. NX zapobiega przed wykonaniem kodu maszynowego ze stosu, jednakże dalej jesteśmy w stanie modyfikować stos za pomocą niebezpiecznych funkcji typu `gets()` lub `strcpy()`. Procesor widząc obszar pamieci oznaczony jako `non-executable` wznosi tylko wyjątek i powoduje koniec programu. Przykładem ataku, który pomimo niewykonywalnego stosu jest w stanie exploitować program  jest `ret2libc`. Celem takiego ataku nie jest wstrzyknięcie i wykonanie złośliwego kodu, a wywołanie funkcji bibliotecznych podczas wychodzenia z funkcji, wktorej nastąpiło przepełnienie - więcej o tym ataku w punkcie `5.2`.
 
-W przypadku użycia najnowszego `gcc` metoda NX jest defaultowo włączona. Istnieje jednak możliwość wyłączenia tej metody poprzez dodanie odpowiedniej flagi podczas kompilacji, a mianowicie `-z execstack`. W przypadku użycia kompilatora `clang` metoda NX jest również defaultowo włączona. Równiez isnitje możliwosć wyłączenia tej metody, poprzez flagę `-fsanitize=safe-stack`.
+## 3. GCC i Clang
 
+W przypadku użycia najnowszego `gcc` metoda NX jest defaultowo włączona. Istnieje jednak możliwość wyłączenia tej metody poprzez dodanie odpowiedniej flagi podczas kompilacji, a mianowicie `-z execstack`.
+W przypadku użycia kompilatora `clang` metoda NX jest również defaultowo włączona. Równiez isnitje możliwosć wyłączenia tej metody, poprzez flagę `-fsanitize=safe-stack`.
 
+## 4. Różnice w Windows i Linux
 
-## 2.1 Przykładowa aplikacji - atack `shellcode injection`
+Różnice działania mechanizmu ochrony stosu w tych dwóch systemach jest marginalna. Oba systemy oprócz hardwarowego wsparcia NX bit wspierają również emulację tej metody, dla Linux jest to PaX. Wsyztskie implementacje tej metody mają nacelu jedno, ochronę aplikacji.
+
+## 5.1 Przykładowa aplikacji - atack `shellcode injection`
 
 
 Przyjęte założenia:
@@ -27,7 +33,7 @@ Przyjęte założenia:
 
 
 
-Kodpodatnej aplikacji. Podatność znajduje się w funkcji `vuln`, w której wywołujemy funkcję `gets()` - nie sprawdza ile bitów podajemy do zapisania i potrafi zapisać bity nawet poza długością przeznaczonego do tego buffora. 
+Poniżej znajduje się kod podatnej aplikacji. Podatność znajduje się w funkcji `vuln`, w której wywołujemy funkcję `gets()` - nie sprawdza ile bitów podajemy do zapisania i potrafi zapisać bity nawet poza długością przeznaczonego do tego buffora. 
 
 ```
 //gcc vuln.c -o vuln -m32 -fno-stack-protector -no-pie -z execstack
@@ -52,7 +58,7 @@ int main(int argc, char *argv[])
 Aby dokonać exploitacji takiego programu należy wstrzyknąć kod, który chcemy wykonać na stos, a następnie nadpisać adres powrotu w funkcji `vuln()` na adres naszego kodu. Zatem eksploitację można podzielić na następujące punkty:
 
 * znaleźć padding, który należy zastosować aby nadpisać `eip`
-* podać adres wstrzykniętego kodu
+* wyliczyć odpowiedni adres na który mamy skoczyć po wyjsciu z funkcji
 * wstrzyknąć odpowiedni shellcode
 
 Aby odnaleźć odpowiedni padding, można posłużyć się patternem `AAAABBBBCCCCDDDDEEEE...`. Dzięki takiemu inputowi w łatwy sposób w `gdb` można sprawdzić jaki adres został nadpisany na rejestr 	`eip`. W przypadku tej aplikacji jest to `HHHH`, zatem padding to `AAAABBBBCCCCDDDDEEEEFFFFGGGG`. 
@@ -137,7 +143,7 @@ Dla aplikacji z włączonym zabezpieczeniem exploit nie działa. Dostajemy sygna
 
 
 
-## 2.2 Przykładowa aplikacji - atak `ret2libc`
+## 5.2 Przykładowa aplikacji - atak `ret2libc`
 
 Tak jak wspomniałem w `wady i zalety`, pomimo właczonej ochorny `NX`, dlaej istnieje moźliwość exploitacji aplikacji - poprzez atak `ret2libc`. W tym ataku, zamiast wykonywać shellcode ze strosu, wykorzystamy funkcje biblioteczne z bibioteki `libc`.
 
