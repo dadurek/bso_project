@@ -10,6 +10,9 @@ W repozytorium znajdują sie katalogi o nazwie adekwatnej do opisywanego rozwią
 
 W każdym `solution.md` znajduje się:
 
+* opis metody
 * omówienie wad i zalet oraz uzyteczności danej techniki ochrony aplikacy natywnych
 * porównanie metody dla kompilatorów `gcc` oraz `clang`
 * porównanie metody w systemach z rodziny Linux oraz Windows - w metodach, w których taki podział ma znaczenie
+
+
