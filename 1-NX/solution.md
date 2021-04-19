@@ -2,19 +2,16 @@
 
 ## 1. Opis 
 
-`Executable space protection`, w bezpieczeństwie systemów i oprogramowania, odnosi się do oznaczania regionów pamięci jako `niewykonywalen` - `non-executable`. W wyniku takiego oznaczenia wykonywanie kodu maszynowego z regionu tak oznaczonego zakończy się wzniesieniem wyjątku. 
+`Executable space protection`, w bezpieczeństwie systemów i oprogramowania, odnosi się do oznaczania regionów pamięci jako `niewykonywalen` - `non-executable`. W wyniku takiego oznaczenia wykonywanie kodu maszynowego z regionu tak oznaczonego zakończy się wzniesieniem wyjątku. Technologia, która najczęściej odpowiada za zabezpieczenie stacka to `NX bit`, która jest funkcją `Memory Managment Unit`. Jest to technologia wspierana sprzętowo, dlatego też używanie tej technologi nie zmienia wydajności aplikacji. W proceorach AMD technologia nazwana jest jako "Enhanced Virus Protection", u Intela natomiast jako "XD (eXecute Disabled) bit". MMU jest kontrolowane przez kernel - to on decyduje jakie elementy kodu dostają uprawnienia `execution`. Można więc stwierdzić, że to system kontroluje czy stack jest wykonywalny, lub nie.
 
-W proceorach `AMD` technologia nazwana jest jako "Enhanced Virus Protection", u Intela natomiast jako "XD (eXecute Disabled) bit". 
-
-Oznacza to, że w przypadku ataków BOF, podczas których najczęściej wstrzykujemy kod na stos, który następnie chcemy wykonać jest niemożliwe. Przykład takiego exploitu zadenmonstruję w kolejnych punktach.
+Taka metoda zabezpieczania aplikacji powoduje, że w przypadku ataków BOF, podczas których najczęściej wstrzykujemy kod na stos, który następnie chcemy wykonać jest niemożliwe. Przykład takiego exploitu zadenmonstruję w punkcie `5.1`.
 
 ## 2. Wady i zalety
 
 NX jest jedną z wielu sposobów zapobiegania przed atakami typu BOF. Nie jest to jednak metoda, która całkowicie zapobiega takim atakom - można powiedzieć że żadna technika nie jest w stanie w 100% zapewnić bezpieczeństwo aplikacji. 
 
-Wykorzystywanie samej metody NX w zabezpieczeniu aplikacji powinno być jedna z wielu metod. NX zapobiega przed wykonaniem kodu maszynowego ze stosu, jednakże należy pamiętać, że i NX da sie ominąć. Przykładem jest atak typu `ret2libc`. Celem takiego ataku nie jest wstrzyknięcie i wykonanie złośliwego kodu, a wywołanie funkcji bibliotecznych podczas wychodzenia z funkcji, wktorej nastąpiło przepełnienie - więcej o tym ataku w kolejnych punktach.
+Wykorzystywanie samej metody NX w zabezpieczeniu aplikacji powinno być jedna z wielu metod. NX zapobiega przed wykonaniem kodu maszynowego ze stosu, jednakże należy pamiętać, że dalej jesteśmy w stanie modyfikować stos za pomocą niebezpiecznych funkcji typu `gets()` lub `strcpy()`. Procesor widząc obszar pamieci oznaczony jako `non-executable` wznosi tylko wyjątek i powoduje koniec programu. Przykładem ataku, który pomimo niewykonywalnego stosu jest w stanie exploitować program  jest `ret2libc`. Celem takiego ataku nie jest wstrzyknięcie i wykonanie złośliwego kodu, a wywołanie funkcji bibliotecznych podczas wychodzenia z funkcji, wktorej nastąpiło przepełnienie - więcej o tym ataku w punkcie `5.2`.
 
-Można więc stwierdzić, że NX jest dobrym sposobem ochorony aplikacji działającej w trybie uzytkownika, jednakże należy wiedzieć, że nie zapewnie on całkowitej ochrony.
 
 
 ## 3. Porównanie metody w przypadku `gcc` i `clang`
@@ -199,20 +196,20 @@ Padding został odnaleziony w taki sam sposób, jak w poprzednim ataku.
 
 Do odnalezienia adresu `system()` posłuzyłem się `gdb`. Po zbreakowaniu się na funkcji `vuln()` i rozpoczęciu programu mogłem sprawdzić adres `system()` w aplikacji używając do tego `print system`.
 
-![](/pictures/2_system_adr.png)
+![](pictures/2_system_adr.png)
 
 Aby odnależć adres `/bin/sh` posłużyłem się komendą `ldd vuln-protected`, która zwraca jaki linker używa aplikacja wraz z adresem poczatku w pamieci linkera. Użyłem równiez koemndy `strings -a -t x /lib/i386-linux-gnu/libc.so.6 | grep '/bin/sh'` aby odnależć adres 	`/bin/sh` w libc. 
 
-![](/pictures/2_libc_binsh.png)
+![](pictures/2_libc_binsh.png)
 
 Następnie aby obliczyć adres `/bin/sh` w aplikacji należy dodać do adresu `libc.so.6` offset `/bin/sh`.
 
-![](/pictures/2_addres_binsh.png)
+![](pictures/2_addres_binsh.png)
 
 Aby sprawdzić, czy odpowiednio wyliczyłem adres w `gdb` sprawdziłem co znajduje się pod tym adresem. Jak widać poniżej, poprawnie udało się obliczyć adres.
 
 
-![](/pictures/2_gdb_addres_binsh.png)
+![](pictures/2_gdb_addres_binsh.png)
 
 Syscall `exit()` nie jest obowiązkowy, bez tego dalej uda się nam dostać shella. Jednakże wychodząc z shella otrzymamy `SIGSEGV`. Aby wyjśc z shella bez tego sygnału, należy umieścić na stacku równiez adres `exit()`. Adres ten odnalazłem w identyczny sposób, jak adres `system()`. 
 
