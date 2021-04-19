@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
-void vuln(){
+void vuln()
+{
 	char buffer[16];
 	gets(buffer);
 	printf("Buffer = %p", buffer);
@@ -12,4 +13,5 @@ void vuln(){
 int main(int argc, char *argv[])
 {
 	vuln();
+	return 0;
 }
