@@ -35,7 +35,7 @@ Przyjęte założenia:
 
 Poniżej znajduje się kod podatnej aplikacji. Podatność znajduje się w funkcji `vuln`, w której wywołujemy funkcję `gets()` - nie sprawdza ile bitów podajemy do zapisania i potrafi zapisać bity nawet poza długością przeznaczonego do tego buffora. 
 
-```
+```c
 //gcc vuln.c -o vuln -m32 -fno-stack-protector -no-pie -z execstack
 
 #include <stdio.h>
@@ -71,7 +71,7 @@ Następnym krokiem jest odnalezienie adresu `buffer`. Adres jest stały, poniewa
 
 Shellcode można pobrać ze strony [shell-storm.org](http://shell-storm.org/shellcode/files/shellcode-752.php). W przypadku tego exploita używam shellcodu w postaci ASM, napisany dla architektury x86.
 
-```asm
+```python
 xor ecx, ecx
 mul ecx
 push ecx

@@ -1,4 +1,4 @@
-//gcc vuln.c -o vuln -m32 -fno-stack-protector -z execstack
+//gcc vuln-protected-1.c -o vuln-protected-1 -m32 -fstack-protector -z execstack
 
 #include <stdio.h>
 #include <string.h>
