@@ -2,16 +2,60 @@
 
 ## 1. Opis
 
+`Stack canary` jest używane w celu sprawdzenia, czy nastąpił `BOF`. Nazwa pochodzi z czasów, kiedy kanarek służył w kopalni jako ostrzeżenie o niebezpiecznym stężeniu gazów, które mogły doprowadzić do wybuchu. Metoda to działa dzięki umiejszaczniu pewnej wartości, która jest generowana każdoroazowo przy uruchomieniu programu, tuż przed wartością powrotu - return value. Następnie ta wartośc jest sprawdzana przed wyjściem z funkcji - jeżeli wartość się zgadza następuje wjście z funkcji, jeżeli nie dostajemy błąd `stack smashing detected`.
+
+
+Można wyróżnic 4 rózne typy kanarków:
+
+* `Random Canary` - pseeudolosowa 32-bitowa wartośc generowana dla linux przez `/deb/random` lub `/dev/urandom`
+* `Random XOR Canary` - ulepszony `Random Canary`, wartośc jest XOR-owana z wartością przechowywaną w wartościach kontrolnych
+* `Null Canary` - wartość kanarka ustawiona jako `0x00000000` - null byte. Dzięki temu nadpisania kanarka miało być niemoożliwe, ponieważ większośc funkcji interpretuje `0x00` jako koniec stringa, przez co nie możliwe było napisanie adresu powrotu
+* `Terminator Canary` - wartością kanarka jest kombinacja Null, CT, LF i 0xFF, gdyż te wartości są string terminators w większości funkcji, które zapisują wartości do bufora
+
+
+Sprawdzenie kanarka odbywa się przed wyjściem z funkcji. Porówynawan jest wartość ze stosu z wartością zawartą w zmiennych globalnych. W disassemble kodzie funkcji, widać dokładnie w którym miejscu kanarek jest umieszczany na stos oraz w którym miejscu jest on sprawdzany. Poniżej znajduje się fragment kodu asm funkcji vuln, w której sprawdzany jest kanarek. W tym przypadku kanarek najpierw jest pobierany ze stosu z pod adresu `ebp - 0xc` do rejestru `eax`, a następnie odejmowana jest wartość orginalnego kanarka pobranego za pomocją rejestru `gs` - rejestr użwayny do pobierania danych (dla `Windows`-a wskazuje na struktury zdefuniowanych w systemie operacyjnym, a dla `Linux`-a poprzez kernel uzyskuje dostep do specyficnej pamieci dla procesora). Jeżeli w rejestrze `eax` znajduje się zero, wówczas program przehcodzi do instrukcji `<vuln + 84>` - następuje wyjście z funkcji. Jeżeli nie wołany jest `<__stack_chk_fail_local>`.
+
+![](pictures/asm_canary.png)
+
+Sprawdzenie kanarka można podejrzeć również dzieki programowi takiemu jak `Ghidra` - narżedzie inżynierji wstecznej pozwalające odtworzyć orginalny kod aplikacji. Na screenie poniżej widać, że na początku funkcji zapisywana jest pewna wartośc `int` - kanarek, a przed wyjściem z funkcji sprawdzana jest jego wartość z wartością orginalną.
+
+![](pictures/ghidra_canary.png)
 
 
 
 ## 2. Wady i zalety
 
+Niewątpiwą zaletą zabezpieczania aplikacji poprzez użycie kanarka jest zabezpieczenie jej przed atakami `BOF`. Dzięki sprawdzeniu wartości kanarka na stosie ataki skupiajace się na nadpisaniu adresu powrotu są niemozliwe, gdyż zgadnięcie wartości kanarka jest niemożliwe.
+
+Zaletą jest również to, że używanie stack protection dodaje niewielki nakład do stosu oraz do ilości instrukcji. Jest to protsy spossób sprawdzania czy nie nastąpił `BOF`. Nakład ten jest niemalże niezauważalny, jeśli nie uzywamy `fstack-protector-all`.
+
+Wadą sotosowania kanarka jest to, że jeżeli jesteśmy w stanie leakować go ze stosu poprzez podatności typu `printf()`, stanowi on wówczas prawie zerowe zabezpieczenie, gdyż nadpisując stos na miejsce kanarka możemy na miejsce kanarka zapisać zleakowaną wartośc kanarka, przez co sprawdzenie jego przejdzie pomyślnie.
+
+Kolejną wadą kanarka jest to, że w przypadku złego zaimplementowania `fork`-owania procesów jesteśmy w stanie zbruteforce-ować wartośc kanarka. Forkując proces uzyskujemy jego idealną kopię - kanarek równiez pozostaje ten sam. Zatem istenieje opcja nadpisywania kanarka bit po bicie i zgadywania jego wartości.
+
 
 ## 3. GCC i Clang
 
+Kompilatory `GCC` oraz `Clang` zapewniają stack canary jako jednną z metod ochorny aplikacji. W obu przypadkach zabezpieczenie te jest defaultowo włączone, jeżeli w danej funkcji występuje występuje lista charów o długosci niemniejszej niż 8 znaków oraz w funkcji nie wsytępuja deprecated metody typu `gets()`. W kompilatorach kanarek jest tą samą wartością dla całego programu, nie zmienia się po uruchomieniu.
+
+W przypadku `GCC` oraz `Clang` wstępują 3 różne ustawienia zabezpieczenia poprzez uzycie kanarka. Deafultowowym zabezpieczeniem jest `fstack-protector-strong`. 
+
+* `fstack-protector` - implementuje kanarka w funkcji jeżeli, w danej funkcji występuje występuje:
+	* lista charów o długosci niemniejszej niż 8 znaków oraz w funkcji nie wsytępuja deprecated metody typu `gets()`.
+	* zmienna całkowita większa ninz 8 byte0ów
+	* wywoływana jest funkcja `alloca()` z argumentem większym niż 8 byte-ów
+* `fstack-protector-all` - implementuje kanarka we `wszystkich` funkcjach. Ten sposób zabezpieczania może miec wpływ na czasie działania aplikacji (w kazdej funkcji znajdują się dodatkowe instrukcje) oraz wpłynąc na rozmiar stacka.
+* `fstack-protector-strong` - jest to kompromis pomiędzy poprzednimi rozwiązaniami, ponieważ kanarek umieszczany jest w funkcji jeżeli:
+	* funkcji używa zmiennych lokalnych o każdej długości
+	* używana jest funkcja `alloca()`
+	* występuje zmienna lokalna, której adres jest już używany
+
+Kanarek używany w `GCC` i `Clang` zaczyna się od NULL byte - używane w celu utrudnienia nadpisania kanarka.
+
 
 ## 4. Różnice w Windows i Linux
+
+# TUTAJ COS DOPISAĆ
 
 ## 5.1 Przykładowa aplikacjia - atak `schellcode injection`
 
@@ -240,4 +284,4 @@ W wyniku działania powyższego exploita uzyskujemy shella. Na potrzeby kolejneg
 ## 6. Podsumowanie
 
 
-
+Kanarek jest dobrą metodą, aby zabezpieczyć  aplikację przed atakami opartych na `BOF`. Niestety, nie jest to metoda pozbawiona wad. Jeżeli jesteśmy wstanie zleakować kanarka, wówczas sprawdzanie kanarka nic nie da, gdyż wartość będzie poprawna. Należy pamietać, aby przy kompilacji aplikacji używać wielu metod ochorny i nie używać podatynch funkcji. 
