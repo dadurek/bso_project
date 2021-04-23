@@ -36,8 +36,6 @@ Przyjęte założenia:
 Poniżej znajduje się kod podatnej aplikacji. Podatność znajduje się w funkcji `vuln`, w której wywołujemy funkcję `gets()` - nie sprawdza ile bitów podajemy do zapisania i potrafi zapisać bity nawet poza długością przeznaczonego do tego buffora. 
 
 ```c
-//gcc vuln.c -o vuln -m32 -fno-stack-protector -no-pie -z execstack
-
 #include <stdio.h>
 #include <string.h>
 
@@ -157,8 +155,6 @@ Przyjęte założenia:
 Kod podatnej aplikacji. Tak jak w poprzedniej wersji, podatnością jest `gets()`. Zmienione zostały jedynie flagi kompilacji.
 
 ```c
-//gcc vuln-protected.c -o vuln-protected -m32 -fno-stack-protector -no-pie
-
 #include <stdio.h>
 #include <string.h>
 
