@@ -60,6 +60,11 @@ Brak różnic w przypadku tej metody ochorny aplikacji.
 
 ## 5.1 Przykładowa aplikacjia - `schellcode injection`
 
+PLIKI:
+* vuln
+* vuln-protected-1
+* exploit.py
+
 Tak jak wspomniałem wcześniej, stack canary jest metodą, która może uchornić aplikację przed atakiem BOF. Przykładem będzie aplikacja stworzona na potrzeby metody `NX bit`. Aplikacja posiada podatność w postaci funkcji `gets()`. W przypadku wyłączonego kanarka jesteśmy w stanie zdobyć shella w identyczny sposób jak opisany w `1-NX`.
 
 Założenia kompilacji:
@@ -102,6 +107,10 @@ Sytuacja zmienia się jednak, gdy zastosujemy stack canary. Wówczac ataki wymie
 
 
 ## 5.2 Przykładowa aplikacja - `shellcode injection` z  wyciekiem `stack canary`
+
+PLIKI:
+* vuln-protected-2
+* exploit-protected.py
 
 
 W punkcie opisanym powyżej, wspomniałem że do udanego ataku potrzebujemy dodać na stack również wartość kanarka. Trudnością jest uzyskanie tego kanarka. Można to zrobić, jeżeli aplikacja zawiera podatności typu `printf()`, gdzie za pomocą odpowiednich specyfikatorów można wypisać wartość ze stosu.

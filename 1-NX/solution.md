@@ -26,6 +26,10 @@ Różnice działania mechanizmu ochrony stosu w tych dwóch systemach jest margi
 
 ## 5.1 Przykładowa aplikacji - `shellcode injection`
 
+PLIKI:
+* vuln
+* exploit.py
+
 Celem poniższego ataku jest uzyskanie shella poprzez umiejscowienie na stosie shellcode.
 
 Przyjęte założenia podczas kompilacji:
@@ -147,6 +151,10 @@ Dla aplikacji z włączonym zabezpieczeniem exploit nie działa. Dostajemy sygna
 
 
 ## 5.2 Przykładowa aplikacji - `ret2libc`
+
+PLIKI:
+* vuln-protected
+* exploit-protected.py
 
 Tak jak wspomniałem w `wady i zalety`, pomimo właczonej ochorny `NX`, dalej istnieje moźliwość exploitacji aplikacji - poprzez atak `ret2libc`. W tym ataku, zamiast wykonywać shellcode ze stosu, wykorzystamy funkcję oraz wartości zawarte w `libc`.
 

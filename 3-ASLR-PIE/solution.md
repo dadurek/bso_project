@@ -75,6 +75,7 @@ W windowsie ASLR jest `link-time option`. Kod jest patch-owany podczas pracy pro
 
 ## 5.1 Przykładowa aplikacja - atak na aplikację z róznymi ustawieniami ASLR i PIE
 
+
 Celem tego ataku będzie pokazanie wpływu ASLR i PIE na możliwość exploitacji aplikacji.
 
 Pierwotne założenia kompilacji:
@@ -129,6 +130,10 @@ W przypadku każdego z popunktów padding jest identyczny i wynosi 28 znaków. J
 
 ### a) NO ASLR & NO PIE
 
+PLIKI:
+* vuln-1
+* exploit-1
+
 Jako że ASLR oraz PIE jest wyłączone, adres funkcji `win` jest stały. Oznacza to, że adres mogę pobrać bezpośrednio z `gdb`. Wówczas exploit to podanie odpowiedniego paddingu oraz nadpisanie adresu powrotu adresem funkcji `win`.
 
 
@@ -161,6 +166,10 @@ W wyniku poniższego exploitu dostajemy shella.
 
 
 ### b) NO ASLR & PIE
+
+PLIKI:
+* vuln-protected-2
+* exploit-protected-2.py
 
 W przypadku tego ustawienia, asm skompilowanej aplikacji oparty jest na liczeniu offsetów. Jednakże, base addres jest stały, gdyż nie używamy ASLR. 
 
@@ -198,12 +207,20 @@ W wyniku poniższego exploitu dostajemy shella.
 
 ### c) ASLR & NO PIE
 
+PLIKI:
+* vuln-1
+* exploit-1.py
+
 W takiej konfiguracji atak opisany, tak jak w podpunkcie `a)` jest identyczny. Dzieje się tak, ponieważ sekcja `text` nie jest losowana. Jej adres jest stały. Wartość funkcji `win` można pobrać z `gdb` tak samo jak w podpunkcie `a)`. Exploit ten sam co w punkcie `a)`.
 
 ![](pictures/1_aslr_no_pie.png)
 
 
 ### d) ASLR & PIE
+
+PLIKI:
+* vuln-protected-2 
+* exploit-protected-3.py
 
 W takim przypadku takim, wszystkie segmenty pamięci są losowane. Skok do funkcji `win` jest niemalże niemożliwy jeżeli nie zleakujemy adresu bazowego PIE. Możliwe jest to tylko jeżeli występuje podatność pozwalająca leakować pamieć.
 
@@ -273,6 +290,8 @@ Warto zauważyć, że gdyby nie podatność programu w postaci możliwości wyli
 
 ## 5.2 Przykładowa aplikacjia - `ROP`
 
+
+
 `ROP` - Return-Oriented Programing jest techniką exploitacji programu poprzez wykonywanie kodu na atakowanej maszynie. W tym przypadku, zamiast wstrzykiwać kod uzywamy isntrukcji zawartycj już w aplikacji. Instrukcje takie, zwane `gadgetami`, muszą zawierać instrukcję `ret` aby przechodzić do kolejnych gadżetów.
 
 W przypadku dwóch opisanych ataków, celem jest wykonanie syscalla `exceve()` z odpowiednimi argumentami, aby otrzymać shella. Zatem aby tego dokonać wymagane jest:
@@ -297,6 +316,10 @@ Kod aplikacji jest ten sam co we wszytskich punktach. Wykorzystywanymi podantoś
 
 
 ### a) ASLR & NO PIE
+
+PLIKI:
+* vuln-protected-3
+* exploit-protected-4.py
 
 W przypadku konfiguracji bez `PIE` odnalezienia adresów gadgetów jest trywialne. Sekcja text, w której znajduje się kod aplikacji jest stały. Gdgety który odnalazłem pozwalają mi umieścić argument `/bin//sh` w odpowiednie miejsce w pamięci, a także powalają mi ustawic wartości w rejestrach na takie, które są potrzeben do wykonania syscalla.
 
@@ -438,6 +461,10 @@ W wyniku powyższego exlpoitu uzyskuję shella.
 
 
 ### b) ASLR & PIE
+
+PLIKI:
+* vuln-protected-4
+* exploit-protected-5.py
 
 Exploitacja programu z `PIE` jest o tyle trudniejsza, ponieważ sekcja text jest równiez ruchoma. Aby odnaleźć offset, dzięki któremu wiem gdzie znajdują się wszytskie isntrukcji posłużyłem się identycznym sposobem co w punkcie `5.1 d)` - schemat jak to zrobiłem jest przedstawiony we wskazanym punkcie. 
 
