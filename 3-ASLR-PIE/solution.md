@@ -7,7 +7,7 @@ W tym `solution.md` opiszę jednocześnie dwie metody, `ASLR` oraz `PIE`. Uważa
 
 #### ASLR
 
-`ASLR`, a dokładniej `Addres Space Layout Randomization` to technika, która losuje przestrzeń adresową podczas startu programu. Jest implementowana systemowo, niezależnie od kompilacji. Dzieki temu ataki opierające się na `BOF` są trudniejsze w wykonaniu ze względu na randomizację adresów. ASLR losuje adresy dla wszystkich sekcji oprócz `text` i `plt`. Losowość tych sekcji można zaobserować w `gdb` poprzez polecenie `vmmap` i `plt`, jednakże aby to zrobić należy podłączyć się pod istniejący proces w systemie poprzez komende `attach pid` lub włączyć ASLR w gdb poprzez komendę `set disable-randomization off` -  w `gdb` ASLR jest domyślnie **wyłączony**
+`ASLR`, a dokładniej `Addres Space Layout Randomization` to technika, która losuje przestrzeń adresową podczas startu programu. Jest implementowana systemowo, niezależnie od kompilacji. Dzieki temu ataki opierające się na `BOF` są trudniejsze w wykonaniu ze względu na randomizację adresów. ASLR losuje adresy dla wszystkich sekcji oprócz `text` i `plt`. Losowość tych sekcji można zaobserować w `gdb` poprzez polecenie `vmmap`, jednakże aby to zrobić należy podłączyć się pod istniejący proces w systemie poprzez komende `attach pid` lub włączyć ASLR w gdb poprzez komendę `set disable-randomization off` -  w `gdb` ASLR jest domyślnie **wyłączony**
 
 
 
