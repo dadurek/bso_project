@@ -608,7 +608,7 @@ W wyniku powyższego exploita otrzymujemy shella. Na potrzeby screenshota zakome
 
 Ochrona aplikacji poprzez używanie tylko ASLR lub PIE jest pozbawiona sensu. W przypadku użycia tylko ASLR sekcja text jest stała co sprawia, że atak ROP jest możliwy. W przypadku samego PIE znam adres bazowy, gdyż jest to stała wartość.
 
-Aby zabezpieczyć aplikację należy użyć obie metody - ASLR i PIE  Gwarantuje to losowość każdej sekcji w programie. Dzieki temu bezpieczeństwo znacznie się poprawia. Należy jednak unikać niebezpiecznych funkcji pogroju `gets()` oraz `printf()` gdyż pozwalają one ominąć te zabezpieczenia poprzez liczenie odpowiednich offsetów do sekcji, do którch atakujący chce się dostać.
+Aby zabezpieczyć aplikację należy użyć obie metody - ASLR i PIE.  Gwarantuje to losowość każdej sekcji w programie. Dzięki temu bezpieczeństwo znacznie się poprawia. Należy jednak unikać niebezpiecznych funkcji pogroju `gets()` oraz `printf()` gdyż pozwalają one ominąć te zabezpieczenia poprzez liczenie odpowiednich offsetów do sekcji, do którch atakujący chce się dostać.
 
 
 
