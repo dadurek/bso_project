@@ -60,10 +60,12 @@ Brak różnic w przypadku tej metody ochorny aplikacji.
 
 ## 5.1 Przykładowa aplikacjia - `schellcode injection`
 
+---------
 PLIKI:
-* vuln
-* vuln-protected-1
-* exploit.py
+1. `vuln-1.c`
+2. `vuln-1`
+3. `exploit-1.py`
+------------
 
 Tak jak wspomniałem wcześniej, stack canary jest metodą, która może uchornić aplikację przed atakiem BOF. Przykładem będzie aplikacja stworzona na potrzeby metody `NX bit`. Aplikacja posiada podatność w postaci funkcji `gets()`. W przypadku wyłączonego kanarka jesteśmy w stanie zdobyć shella w identyczny sposób jak opisany w `1-NX`.
 
@@ -99,6 +101,13 @@ Plik skompilowany w taki sposób jesteśmy w stanie exploitować za pomocą taki
 
 ![](pictures/1_shell.png)
 
+--------------
+
+PLIKI:
+1. `vuln-1.c`
+2. `vuln-2`
+3. `exploit-2.py`
+-------------
 
 Sytuacja zmienia się jednak, gdy zastosujemy stack canary. Wówczac ataki wymienione powyżej muszą ulec zmianie. Wartość kanarka znajduje się nad nad adresem powrotu, zatem jeżeli będziemy chcieli nadpisać ret, będziemy zmuszeni podać również wartość kanarka. Jeżeli tego nie zrobimy dostaniemy błąd `stack smashing detected` - wartość kanarka nieodpowienida = nastąpił BOF.
 
@@ -108,9 +117,14 @@ Sytuacja zmienia się jednak, gdy zastosujemy stack canary. Wówczac ataki wymie
 
 ## 5.2 Przykładowa aplikacja - `shellcode injection` z  wyciekiem `stack canary`
 
+
+--------------
+
 PLIKI:
-* vuln-protected-2
-* exploit-protected.py
+1. `vuln-2.c`
+2. `vuln-3`
+3. `exploit-3.py`
+-------------
 
 
 W punkcie opisanym powyżej, wspomniałem że do udanego ataku potrzebujemy dodać na stack również wartość kanarka. Trudnością jest uzyskanie tego kanarka. Można to zrobić, jeżeli aplikacja zawiera podatności typu `printf()`, gdzie za pomocą odpowiednich specyfikatorów można wypisać wartość ze stosu.

