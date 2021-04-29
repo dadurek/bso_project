@@ -2,16 +2,20 @@
 
 ## 1. Opis 
 
-`Executable space protection`, w bezpieczeństwie systemów i oprogramowania, odnosi się do oznaczania regionów pamięci jako `niewykonywalen` - `non-executable`. W wyniku takiego oznaczenia wykonywanie kodu maszynowego z regionu tak oznaczonego zakończy się wzniesieniem wyjątku. Technologia, która najczęściej odpowiada za zabezpieczenie stacka to `NX bit`, która jest funkcją `Memory Managment Unit`. MMU jest kontrolowane przez kernel - to on decyduje jakie elementy kodu dostają uprawnienia `execution`. Można więc stwierdzić, że to system kontroluje czy stack jest wykonywalny, lub nie.
+`Executable space protection`, w bezpieczeństwie systemów i oprogramowania, odnosi się do oznaczania regionów pamięci jako `niewykonywalen` - `non-executable`. W wyniku takiego oznaczenia wykonywanie kodu maszynowego z regionu tak oznaczonego zakończy się wzniesieniem wyjątku. Technologia, która najczęściej odpowiada za zabezpieczenie stacka to `NX bit`, która jest funkcją `Memory Managment Unit`. MMU jest kontrolowane przez kernel - to on decyduje jakie elementy kodu dostają uprawnienia `execution`.
 
 Technologia `NX bit` została zaimplementowana w hardware-owo. W proceorach AMD technologia nazwana jest jako "Enhanced Virus Protection", u Intela natomiast jako "XD (eXecute Disabled) bit". 
 
+W systemach linux loader na podstawie nagłówków w ELF decyduje, które sekcje otrzymują uprawnienia `execution`, a są to:
+*   sekcja `.init` oraz `.fini` - sekcje odpowiedzialne za inizjalizację programu oraz dekompozycje programu
+* sekcja `.plt` oraz `.got` - sekcje odpowiedzialene za dostęp do dunkcji bibliotecznych
+* sekcja `.text` - kod programu
 
 ## 2. Wady i zalety
 
 Jako że jes to metoda wspierana sprzętowo, używanie jej nie zmienia wydajności aplikacji. Występują jednak również implementacje systemowe, które to mogą spowalniać aplikację.
 
-Kolejną zaletą używania `NX` jest to, że w przypadku ataków BOF, podczas których najczęściej wstrzykujemy kod na stos, który następnie chcemy wykonać jest niemożliwe. Przykład takiego exploitu zadenmonstruję w punkcie `5.1`.
+Kolejną zaletą używania `NX` jest to, że w przypadku ataków BOF, podczas których wstrzykujemy kod na stos, który następnie chcemy wykonać jest niemożliwe. Przykład takiego exploitu zadenmonstruję w punkcie `5.1`.
 
 Należy jednak pamiętać, że wykorzystywanie samej metody NX w zabezpieczeniu aplikacji nie zapewnia pełnego bezpieczeństwa. NX zapobiega przed wykonaniem kodu maszynowego ze stosu, jednakże dalej jesteśmy w stanie modyfikować stos za pomocą niebezpiecznych funkcji typu `gets()` lub `strcpy()`. Przykładem ataku, który pomimo niewykonywalnego stosu jest w stanie exploitować program  jest `ret2libc`. Celem takiego ataku nie jest wstrzyknięcie i wykonanie złośliwego kodu, a wywołanie funkcji bibliotecznych z odpowiednimi argumentami - więcej o tym ataku w punkcie `5.2`.
 
@@ -22,8 +26,7 @@ W przypadku użycia kompilatora `clang` metoda NX jest również defaultowo wł�
 
 ## 4. Różnice w Windows i Linux
 
-Różnice działania mechanizmu ochrony stosu w tych dwóch systemach jest marginalna. Oba systemy oprócz hardwarowego wsparcia NX bit wspierają również emulację tej metody, dla Linux jest to PaX. Wsyztskie implementacje tej metody mają na celu jedno - ochronę aplikacji.
-
+Różnice działania mechanizmu ochrony stosu w tych dwóch systemach jest marginalna. Linux wspiera natomiast dodatkowo software'ową emulację tej metody zabezpieczenia. Wiąże się to jednak ze spadkiem wydajnośći. Niektóre dystrybucje liuxa dla architektrury 32bit mają domyślnie *wyłączone* zabezpieczenie Nx bit (ubuntu, fedora).
 ## 5.1 Przykładowa aplikacji - `shellcode injection`
 
 PLIKI:
