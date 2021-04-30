@@ -1,3 +1,4 @@
 *.o
 core
 .gdb_history
+*.swp
