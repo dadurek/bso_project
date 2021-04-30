@@ -76,7 +76,7 @@ Założenia kompilacji:
 * Wyłączone Stack Cannary = `-fno-stack-protector` - przepełnienie bufora bez potrzeby leakowania kanarka
 * Wyłączone PIE - `no-pie` - wyłączone ASLR, więc adres bazowy i tak byłby stały, zatem te zabezpieczenie nie gra roli w tym przypadku
 *
-```c=
+```c
 #include <stdio.h>
 #include <string.h>
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 
 Plik skompilowany w taki sposób jesteśmy w stanie exploitować za pomocą takiego samego ataku jak w `NX bit`, czyli `shellcode injection` lub `ret2libc`. Poniżej znajduje się kod exploita opierającego się na ataku shellcode injection.
 
-```python=
+```python
 #!/usr/bin/env python3
 
 from pwn import *
@@ -173,7 +173,7 @@ Założenia kompilacji:
 * Włączone Stack Cannary = `-fstack-protector` - konieczność podania kanarka w payload
 
 
-```c=
+```c
 #include <stdio.h>
 #include <string.h>
 
@@ -211,7 +211,7 @@ W przypadku tego exploita pokusiłem się o pozostawienie ASLR włączonego, ozn
 
 Pierwszą rzeczą jaką wykonałem to sprawdzenie co znajduje się na stosie. Użyłem fo tego któtkiego skryptu python, który wypisuje jako logi wartości ze stosu. Buffor ma rozmiar 600 byte, mogę więc zatem wypisać 299 wartości, jednakże ze względu na to że taka ilość nie jest potrzeban wypisuje ich 199. Ważne jest aby nie przekroczyć zakresu boffora, gdyż inaczej nadpiszemy kanarka.
 
-```python=
+```python
 from pwn import *
 
 p = process('./vuln-3.o')
@@ -253,7 +253,7 @@ Znając już wartośc kanarka, mogę sprawdzić którym elementem z w tablicy z 
 Kolejnym zadaniem było odnalezienie adresu buffora na stosie. Tak jak wspomniałem w założeniach kompilacji, w tym przypadku ASLR oraz PIE jest włączone, co powoduje randomizacje adresów (więcej o tej technice w katalogi 3-ASLR-PIE). Do obliczenia offsetu posłużyłem się `gdb`, w którym to odnalazłem adres `ebp`, który jestem w stanie zleakować ze stacka, jest on 158 elemente (index w tablic to `157`). W `gdb` odnalazłem również adres `buffer`. Obliczająć różnicę pomiędzy tymi dwoma adresami jestem w stanie znaleźć offset, którym będę mógł się posłużyć do wyliczania rzeczywistego adresu `buffer` w apliakcji. Adres w ebp to `0xffffd1c8`, a adres `buffer` to  `0xffffcf54`, zatem offset wynosi 628.
 
 
-```python=
+```python
 >>> 0xffffd1c8 - 0xffffcf54
 628
 >>> hex(_)
@@ -266,7 +266,7 @@ Kolejnym zadaniem było odnalezienie adresu buffora na stosie. Tak jak wspomnia�
 
 Mając już kanarka oraz adres buffora należy stworzyć shellcode. Shellcode ponownie wykorzystałem ze strony [shell-storm.org](http://shell-storm.org/shellcode/files/shellcode-752.php).
 
-```python=
+```python
 xor ecx, ecx
 mul ecx
 push ecx
@@ -290,7 +290,7 @@ Ostatnim elementem jest odnalezienie odpowiedniego paddingu, aby do adresu powro
 
 Kod exploitu znajduje się poniżej.
 
-```python=
+```python
 #!/usr/bin/env python3
 
 from pwn import *

