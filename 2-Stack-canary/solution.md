@@ -71,10 +71,10 @@ Tak jak wspomniałem wcześniej, stack canary jest metodą, która może uchorni
 
 Założenia kompilacji:
 * Kompilacja na 32-bit = `-m32`
-* Wyłączone ASLR = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space` -  wyłączona radomizacja adresów, aby nie liczyć offsetów
+* Wyłączone ASLR = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space` - wyłączona radomizacja adresów, aby adres buffora był stały
 * Wyłączone NX = `-z execstack` - brak możliwośco wykonania kodu maszynowego ze stosu
 * Wyłączone Stack Cannary = `-fno-stack-protector` - przepełnienie bufora bez potrzeby leakowania kanarka
-* Wyłączone PIE - `no-pie` - w celu bezpośredniego pobrania adresu buffora z asm skompilowanej aplikacji
+* Wyłączone PIE - `no-pie` - wyłączone ASLR, więc adres bazowy i tak byłby stały, zatem te zabezpieczenie nie gra roli w tym przypadku
 ```c
 #include <stdio.h>
 #include <string.h>
@@ -134,6 +134,7 @@ Poniżej znajduje się kod aplikacji zaiwerającej dwie podatności. Pierwszą z
 Założenia kompilacji:
 * Kompilacja na 32-bit = `-m32`
 * Włączone ASLR = `echo 2 | sudo tee /proc/sys/kernel/randomize_va_space` - radomizacja sekcji
+* Włączone PIE - wszytskie sekcje są losowe
 * Wyłączone NX = `-z execstack` - brak możliwości wykonania kodu maszynowego ze stosu
 * Włączone Stack Cannary = `-fstack-protector` - konieczność podania kanarka w payload-zie
 

@@ -336,10 +336,10 @@ Do uzyskania gadżetów posłużyłem sie programmem `ROPgadget`, który przeszu
 Założenia kompilacji:
 
 * Kompilacja na 32-bit = `-m32`
-* Włączone NX - brak mozliwości wykonania kodu maszynowego ze stosu
-* Wyłączone Stack Cannary = `-fno-stack-protector` - przełenienie bufora bez potrzeby leakowania kanarka (w checksec kanarek jest widoczny ponieważ kompilujemy statycznie)
-* PIE - w a) wyłączony `-no-pie` , w b) włączony
-* ASLR - włączony - randomizacja adresów
+* Włączone NX - brak możliwości wykonania kodu maszynowego ze stosu
+* Wyłączone Stack Cannary = `-fno-stack-protector` - przepełnienie bufora bez potrzeby leakowania kanarka (w checksec kanarek jest widoczny ponieważ kompilujemy statycznie)
+* PIE - w a) wyłączony , w b) włączony
+* ASLR - włączony - adres stosu jest losowy
 * Statyczna kompilacja `-static` w przypadku a) i `-static-pie` w przypadku b)
 
 
