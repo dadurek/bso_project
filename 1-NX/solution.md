@@ -1,19 +1,19 @@
 # Executable space protection
 
-## 1. Opis 
+## 1. Opis
 
-`Executable space protection`, w bezpieczeństwie systemów i oprogramowania, odnosi się do oznaczania regionów pamięci jako `niewykonywalen` - `non-executable`. W wyniku takiego oznaczenia wykonywanie kodu maszynowego z regionu tak oznaczonego zakończy się wzniesieniem wyjątku. Technologia, która najczęściej odpowiada za zabezpieczenie stacka to `NX bit`, która jest funkcją `Memory Managment Unit`. MMU jest kontrolowane przez kernel - to on decyduje jakie elementy kodu dostają uprawnienia `execution`.
+`Executable space protection`, w bezpieczeństwie systemów i oprogramowania, odnosi się do oznaczania regionów pamięci jako `niewykonywalne` - `non-executable`. W wyniku takiego oznaczenia wykonywanie kodu maszynowego z regionu tak oznaczonego zakończy się wzniesieniem wyjątku. Technologia, która najczęściej odpowiada za zabezpieczenie stacka to `NX bit`, która jest funkcją `Memory Managment Unit`. MMU jest kontrolowane przez kernel - to on decyduje jakie elementy kodu dostają uprawnienia `execution`.
 
-Technologia `NX bit` została zaimplementowana w hardware-owo. W proceorach AMD technologia nazwana jest jako "Enhanced Virus Protection", u Intela natomiast jako "XD (eXecute Disabled) bit". 
+Technologia `NX bit` została zaimplementowana w hardware-owo. W proceorach AMD technologia nazwana jest jako "Enhanced Virus Protection", u Intela natomiast jako "XD (eXecute Disabled) bit".
 
 W systemach linux loader na podstawie nagłówków w ELF decyduje, które sekcje otrzymują uprawnienia `execution`, a są to:
 *   sekcja `.init` oraz `.fini` - sekcje odpowiedzialne za inizjalizację programu oraz dekompozycje programu
-* sekcja `.plt` oraz `.got` - sekcje odpowiedzialene za dostęp do dunkcji bibliotecznych
+* sekcja `.plt` oraz `.got` - sekcje odpowiedzialene za dostęp do funkcji bibliotecznych
 * sekcja `.text` - kod programu
 
 ## 2. Wady i zalety
 
-Jako że jes to metoda wspierana sprzętowo, używanie jej nie zmienia wydajności aplikacji. Występują jednak również implementacje systemowe, które to mogą spowalniać aplikację.
+Jako że jes to metoda wspierana sprzętowo, używanie jej nie zmienia wydajności aplikacji. Występują jednak również implementacje systemowe, które to mogą negatywnie wpłynąć na wydajność.
 
 Kolejną zaletą używania `NX` jest to, że w przypadku ataków BOF, podczas których wstrzykujemy kod na stos, który następnie chcemy wykonać jest niemożliwe. Przykład takiego exploitu zadenmonstruję w punkcie `5.1`.
 
@@ -21,12 +21,13 @@ Należy jednak pamiętać, że wykorzystywanie samej metody NX w zabezpieczeniu 
 
 ## 3. GCC i Clang
 
-W przypadku użycia najnowszego `gcc` metoda NX jest defaultowo włączona. Istnieje jednak możliwość wyłączenia tej metody poprzez dodanie odpowiedniej flagi podczas kompilacji, a mianowicie `-z execstack`.
+W przypadku użycia `gcc` metoda NX jest defaultowo włączona. Istnieje jednak możliwość wyłączenia tej metody poprzez dodanie odpowiedniej flagi podczas kompilacji, a mianowicie `-z execstack`.
 W przypadku użycia kompilatora `clang` metoda NX jest również defaultowo włączona, a wyłączyć ją można poprzez flagę `-fsanitize=safe-stack`.
 
 ## 4. Różnice w Windows i Linux
 
-Różnice działania mechanizmu ochrony stosu w tych dwóch systemach jest marginalna. Linux wspiera natomiast dodatkowo software'ową emulację tej metody zabezpieczenia. Wiąże się to jednak ze spadkiem wydajnośći. Niektóre dystrybucje liuxa dla architektrury 32bit mają domyślnie *wyłączone* zabezpieczenie Nx bit (ubuntu, fedora).
+Różnice działania mechanizmu ochrony stosu w tych dwóch systemach jest marginalna. Warto natomiast wspomnieć, że Linux wspiera software'ową emulację tej metody zabezpieczenia. Wiąże się to jednak ze spadkiem wydajnośći.
+
 ## 5.1 Przykładowa aplikacji - `shellcode injection`
 
 -------------
@@ -40,16 +41,16 @@ Celem poniższego ataku jest uzyskanie shella poprzez umiejscowienie na stosie s
 
 Przyjęte założenia podczas kompilacji:
 
-* Kompilacja na 32-bit = `-m32`  
+* Kompilacja na 32-bit = `-m32`
 * Wyłączone ASLR = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space` -  wyłączona radomizacja adresów, aby adres buffora był stały
 * Wyłączone NX = `-z execstack` - możliwość wykonania kodu maszynowego ze stosu
 * Wyłączone Stack Cannary = `-fno-stack-protector` -  przepełnienie bufora bez potrzeby leakowania kanarka
 * Wyłączone PIE = `-no-pie` - wyłączone ASLR, więc adres bazowy i tak byłby stały, zatem te zabezpieczenie nie gra roli w tym przypadku
 
 
-Poniżej znajduje się kod podatnej aplikacji. Podatność znajduje się w funkcji `vuln`, w której wywołujemy funkcję `gets()` - nie sprawdza ile bitów podajemy do zapisania i potrafi zapisać bity nawet poza długością przeznaczonego do tego buffora. 
+Poniżej znajduje się kod podatnej aplikacji. Podatność znajduje się w funkcji `vuln`, w której wywołujemy funkcję `gets()` - nie sprawdza ile bitów podajemy do zapisania i potrafi zapisać bity nawet poza długością przeznaczonego do tego buffora.
 
-```c
+```c=
 #include <stdio.h>
 #include <string.h>
 
@@ -74,7 +75,7 @@ Aby dokonać exploitacji takiego programu należy wstrzyknąć kod maszynowy na 
 * wyliczyć odpowiedni adres na który mamy skoczyć po wyjściu z funkcji
 * opracować shellcode
 
-Aby odnaleźć odpowiedni padding, można posłużyć się patternem `AAAABBBBCCCCDDDDEEEE...`. Dzięki takiemu inputowi w łatwy sposób w `gdb` można sprawdzić jaki adres został nadpisany na rejestr 	`eip`. W przypadku tej aplikacji jest to `HHHH`, zatem padding to `AAAABBBBCCCCDDDDEEEEFFFFGGGG` - 28 znaków. 
+Aby odnaleźć odpowiedni padding, można posłużyć się patternem `AAAABBBBCCCCDDDDEEEE...`. Dzięki takiemu inputowi w łatwy sposób w `gdb` można sprawdzić jaka wartość została nadpisana na adres powrotu. W przypadku tej aplikacji jest to `HHHH`, zatem padding to `AAAABBBBCCCCDDDDEEEEFFFFGGGG` - 28 znaków.
 
 ![](pictures/1_padding.png)
 
@@ -82,9 +83,9 @@ Następnym krokiem jest odnalezienie adresu `buffer`. Adres jest stały, poniewa
 
 ![](pictures/1_buffer_addres.png)
 
-Shellcode można pobrać ze strony [shell-storm.org](http://shell-storm.org/shellcode/files/shellcode-752.php). W przypadku tego exploita używam shellcodu w postaci ASM, napisany dla architektury x86. Shellcode używa syscalla o numerze 11, czyli `execve`. Na stos wzurzamy również `/bin//sh` z podwójną `//` - aby stos był wyrównany.
+Shellcode można pobrać ze strony [shell-storm.org](http://shell-storm.org/shellcode/files/shellcode-752.php). W przypadku tego exploita używam shellcodu w postaci ASM, napisany dla architektury x86. Shellcode używa syscalla o numerze 11, czyli `execve`. Na stos wzurzamy również `/bin//sh`, który przypisujemy do rejestru ebx.
 
-```python
+```python=
 xor ecx, ecx
 mul ecx
 push ecx
@@ -96,9 +97,9 @@ int 0x80
 ```
 
 
-Ostatnim elementem potrzebnym do udanej eksploitacji to policzenie odpowiedniego adresu, na który należy wskazać, aby shellcode wykonał się. Do adresu buffora należy dodać długośc paddingu oraz długość adresu powrotu.
+Ostatnim elementem potrzebnym do udanej eksploitacji to policzenie odpowiedniego adresu, na który należy wskazać, aby shellcode wykonał się. Do adresu buffora należy dodać długość paddingu oraz długość adresu powrotu.
 
-```python
+```python=
 padding = b"AAAABBBBCCCCDDDDEEEEFFFFGGGG"
 
 buf_ptr = 0xffffd1d0
@@ -109,7 +110,7 @@ eip = buf_ptr + len(padding) + 4
 Finalny exploit wygląda następująco:
 
 
-```python
+```python=
 #!/usr/bin/env python3
 
 from pwn import *
@@ -144,7 +145,7 @@ p.interactive()
 
 
 
-W wyniku działania exploitu otrzymujemy shella. 
+W wyniku działania exploitu otrzymujemy shella.
 
 ![](pictures/1_shell.png)
 
@@ -173,13 +174,13 @@ Przyjęte założenia podczas kompilacji:
 
 * Kompilacja na 32-bit = `-m32`
 * Wyłączone ASLR = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space` - wyłączona radomizacja adresów, aby adres buffora był stały
-* Włączone NX - brak możliwości wykonania kodu umaszynowego ze stosu
+* Włączone NX - brak możliwości wykonania kodu maszynowego ze stosu
 * Wyłączone Stack Cannary = `-fno-stack-protector`-  przepełnienie bufora bez potrzeby leakowania kanarka
 * Wyłączone PIE = `-no-pie` - wyłączone ASLR, więc adres bazowy i tak byłby stały, zatem te zabezpieczenie nie gra roli w tym przypadku
 
 Kod podatnej aplikacji znajduje się poniżej. Tak jak w poprzedniej wersji, podatnością jest `gets()`. Zmienione zostały jedynie flagi kompilacji.
 
-```c
+```c=
 #include <stdio.h>
 #include <string.h>
 
@@ -209,11 +210,11 @@ Aby dokonać exploitacji takiego programu należy:
 
 Padding został odnaleziony w taki sam sposób, jak w poprzednim ataku.
 
-Do odnalezienia adresu `system()` posłużyłem się `gdb`. Po zbreakowaniu się na funkcji `vuln()` i rozpoczęciu programu mogłem sprawdzić adres `system()` w aplikacji używając do tego `print system` - symbole są ładowane dopiero po uruchomieniu aplikacji, ponieważ aplikacja bliblioteka jest ładowana dynamicznie.
+Do odnalezienia adresu `system()` posłużyłem się `gdb`. Po zbreakowaniu się na funkcji `vuln()` i rozpoczęciu programu mogłem sprawdzić adres `system()` w aplikacji używając do tego `print system` - symbole są ładowane dopiero po uruchomieniu aplikacji, ponieważ bliblioteka jest ładowana dynamicznie.
 
 ![](pictures/2_system_adr.png)
 
-Aby odnaleść adres `/bin/sh` posłużyłem się komendą `ldd vuln-protected`, która zwraca jaki linker używa aplikacja wraz z adresem pod który załadowana zostanie biblioteka. Użyłem równiez koemndy `strings -a -t x /lib/i386-linux-gnu/libc.so.6 | grep '/bin/sh'` aby odnależć adres `/bin/sh` w libc. 
+Aby odnaleść adres `/bin/sh` posłużyłem się komendą `ldd vuln-protected`, która zwraca linker używany przez aplikacja wraz z adresem pod który załadowana zostanie biblioteka. Użyłem równiez koemndy `strings -a -t x /lib/i386-linux-gnu/libc.so.6 | grep '/bin/sh'` aby odnależć adres `/bin/sh` w libc.
 
 ![](pictures/2_libc_binsh.png)
 
@@ -226,7 +227,7 @@ Aby sprawdzić, czy odpowiednio wyliczyłem adres w `gdb` sprawdziłem co znajdu
 
 ![](pictures/2_gdb_addres_binsh.png)
 
-Syscall `exit()` nie jest obowiązkowy. Bez tego dalej uda się nam uzyskać shella. Jednakże wychodząc z shella otrzymamy `SIGSEGV`. Aby wyjśc z powłoki bez tego sygnału, należy umieścić na stacku równiez adres `exit()` - dzięki temu shell wie co zrobić po wyjściu z niego. Adres ten odnalazłem w identyczny sposób, jak adres `system()`. 
+Syscall `exit()` nie jest obowiązkowy. Bez tego dalej uda się nam uzyskać shella. Jednakże wychodząc z shella otrzymamy `SIGSEGV`. Aby wyjśc z powłoki bez tego sygnału, należy umieścić na stacku równiez adres `exit()` - dzięki temu shell wie co zrobić po wyjściu z niego. Adres ten odnalazłem w identyczny sposób, jak adres `system()`.
 
 Zatem finalny wysyłany payload jest postaci:
 
@@ -234,7 +235,7 @@ Zatem finalny wysyłany payload jest postaci:
 
 Kod exploita:
 
-```python
+```python=
 #!/usr/bin/env python3
 
 from pwn import *
@@ -259,7 +260,7 @@ p.interactive()
 
 
 
-Jak widać na poniższym screenshot-cie, udało się dostać shella, pomimo włączonego zabezpieczenia NX. Udowadnia to, że zabezpieczanie aplikacji tylko poprzez `NX` nie jest dobrą techniką.
+Jak widać na poniższym screenshot-cie, udało się dostać shella, pomimo włączonego zabezpieczenia NX. Udowadnia to, że zabezpieczanie aplikacji tylko poprzez `NX` nie jest idealną techniką.
 
 ![](pictures/2_whoami.png)
 

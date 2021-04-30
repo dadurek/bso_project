@@ -1,32 +1,32 @@
 # ALSR & PIE
 
-W tym `solution.md` opiszę jednocześnie dwie metody, `ASLR` oraz `PIE`. Uważam że działanie tych metod jest na tyle połączone ze sobą, że nie ma sensu rozdzielać je na dwa oddzielne opracowania.
+W tym `solution.md` opiszę jednocześnie dwie metody, `ASLR` oraz `PIE`. Uważam że działanie tych metod jest na tyle połączone ze sobą, że nie ma sensu rozdzielać ich na dwa oddzielne opracowania.
 
 
 ## 1. Opis
 
 #### ASLR
 
-`ASLR`, a dokładniej `Addres Space Layout Randomization` to technika, która losuje przestrzeń adresową podczas startu programu. Jest implementowana systemowo, niezależnie od kompilacji. Dzieki temu ataki opierające się na `BOF` są trudniejsze w wykonaniu ze względu na randomizację adresów. ASLR losuje adresy dla wszystkich sekcji oprócz `text` i `plt`. Losowość tych sekcji można zaobserować w `gdb` poprzez polecenie `vmmap`, jednakże aby to zrobić należy podłączyć się pod istniejący proces w systemie poprzez komende `attach pid` lub włączyć ASLR w gdb poprzez komendę `set disable-randomization off` -  w `gdb` ASLR jest domyślnie **wyłączony**
+`ASLR`, a dokładniej `Addres Space Layout Randomization` to technika, która losuje przestrzeń adresową podczas startu programu. Jest implementowana systemowo, niezależnie od kompilacji. Dzieki temu ataki opierające się na `BOF` są trudniejsze w wykonaniu ze względu na randomizację adresów. ASLR losuje adresy dla wszystkich sekcji oprócz `text` i `plt`. Losowość tych sekcji można zaobserować w `gdb` poprzez polecenie `vmmap`, jednakże aby to zrobić należy podłączyć się pod istniejący proces w systemie poprzez komende `attach pid` lub włączyć ASLR w gdb poprzez komendę `set disable-randomization off` -  w `gdb` ASLR jest domyślnie **wyłączony**.
 
 
 
 ![](pictures/alsr_compare.png)
 
-ASLR można włączyć i wyłaczyć przy pomocy komendy `echo X | sudo tee /proc/sys/kernel/randomize_va_space`, gdzie `X = 0` to ASLR wyłączony, a `X = 2` ASLR włączony.
+
 
 
 #### PIE
 
 
-`PIE` - `Position indepented executable` jest to technikam, które losuje adres bazowy (base addres). Po skompilowaniu programu widzimy jedynie offsety do danych funkcji, całe poruszanie się po kodzie opiera się na offsetach a nie na dokładnych adres, tak jak to jest bez PIE. Adres bazwoy jest dodawany do każdego adresu podczas uruchamiania aplikacji, co pwooduje losowość wszytskich elementów.
+`PIE` - `Position indepented executable` jest to technikam, która losuje adres bazowy (base addres). Po skompilowaniu programu widzimy jedynie offsety do danych funkcji, całe poruszanie się po kodzie opiera się na offsetach a nie na dokładnych adres, tak jak to jest bez PIE. Adres bazwoy jest dodawany do każdego adresu podczas uruchamiania aplikacji, co pwooduje losowość wszytskich elementów.
 
 
 ![](pictures/pie_disasm.png)
 
 
 
-Metoda ta niejako dopełnia ASLR, gdyż PIE zapewnia to że sekcjie `text` oraz `plt` nie są statyczne. Dzięki tekiemu połączeniu ASLR+PIE wsyztskie sekcje posiadają zmienne adresy co znaczoąco poprawia bezpieczeńśtwo funkcji. Base addres jest każdorazowo losowany przy uruchomieniu aplikacji. Poniżej można zauważyć, że adresy wszystkich sekcji są zmienne. 
+Metoda ta niejako dopełnia ASLR, gdyż PIE zapewnia to że sekcjie `text` oraz `plt` nie są statyczne. Dzięki tekiemu połączeniu ASLR+PIE wsyztskie sekcje posiadają zmienne adresy co znaczoąco poprawia bezpieczeńśtwo funkcji. Base addres jest każdorazowo losowany przy uruchomieniu aplikacji. Poniżej można zauważyć, że adresy wszystkich sekcji są zmienne.
 
 ![](pictures/pie_compare.png)
 
@@ -39,18 +39,18 @@ Metoda ta niejako dopełnia ASLR, gdyż PIE zapewnia to że sekcjie `text` oraz 
 
 Zaletą użycia ASLR w aplikacji jest oczywiście randomizacja adresów. Ataki opierające się na odwołaniu do stacka są niewykonywalne, ze względu  na niezajomośc pozycji stosu w pamięci. Ataki typu shellcode injection są w takim przypadku niewynoywalne.
 
-Wadą stosowania samego ASLR jest fakt, że sekcja data jest statyczna. Pozwala to na wykonanie ataków typu ROP, które wykorzystują fragmenty kodu z pamięci aby następnie np. zdobyć shella. Możliwym zabezpieczeniem jest stosowanie w takich przypadkach PIE.
+Wadą stosowania samego ASLR jest fakt, że sekcja data jest statyczna. Pozwala to na wykonanie ataków typu ROP, które wykorzystują fragmenty kodu z pamięci aby następnie np. zdobyć shella. Możliwym zabezpieczeniem jest stosowanie w takich przypadkach PIE, co zapewnia losowość adresó w sekcji text.
 
-Wadą/zaletą jest również wpływ na wydajność - to czy używanie tej metody zabezpiecznia jest wadą czy laletą zależy od od systemu. Więcej o tym w punkcie 4.
+Wadą/zaletą jest również wpływ na wydajność - to czy używanie tej metody zabezpiecznia jest wadą czy zaletą zależy od od systemu. Więcej o tym w punkcie 4.
 
 
 #### PIE
 
-W tym przypadku nalezy zacząć od wad, ponieważ samo używanie `PIE` bez używania `ASLR` jest nieefektywne. Program skopiluje się, a w kodzie asm będzie widać, że kod opiera się na offsetach, jednakże po uruchomieniu adres bazowy będzie za każdym razem identyczny.
+W tym przypadku należy zacząć od wad, ponieważ samo używanie `PIE` bez używania `ASLR` jest bezsensowne. Program skopiluje się, a w kodzie asm będzie widać, że kod opiera się na offsetach, jednakże po uruchomieniu adres bazowy będzie za każdym razem identyczny.
 
 Oczywistą zaletą `PIE` jest jego wpływ na bezpieczeństwo. Dzięki randomizacji adresu bazowego binarki ataki są trudniejsze. Atak ROP staje się niemożliwy do wykonania, ponieważ sekcja text jest losowana - ma to oczywiście sens jedynie z włączonym ASLR.
 
-Należy wspomnieć również o pływie na wydajność kompilacji programu z `PIE`. Straty w wydajności potrafią być duże ze względu za rezerwowanie jednego z rejestrów. Powoduje to dodatkową ilość operacji (czesto należy coś wrzucić na stos aby tylko zwolnić rejestr). Sytacjia taka występuje na x86, wówczas straty to 10-26%. Taka sytacja nie ma jednak miejsca w x86_64, ponieważ mamy tam więcej rejestrów.
+Należy wspomnieć również o pływie na wydajność kompilacji programu z `PIE`. Straty w wydajności potrafią być duże ze względu za rezerwowanie jednego z rejestrów. Powoduje to dodatkową ilość operacji (czesto należy coś wrzucić na stos aby tylko zwolnić rejestr). Sytuacja taka występuje na x86, wówczas straty to 10-26%, natomiast na x86_64 coś takiego nie występuje, ponieważ mamy tam więcej rejestrów.
 
 
 
@@ -58,7 +58,7 @@ Należy wspomnieć również o pływie na wydajność kompilacji programu z `PIE
 
 ASLR jest metodą niezależną od kompilacji.
 
-Kompilatory `gcc` oraz `clanf` domyślnie używają pie podczas kompilacji. Aby nie kompilwować aplikacji z pie nalezy dodać flagę `-no-pie`. Warto wspomnieć, że domyslnie nie jest możliwe kompilwoanie programu z statycznymi bibliotekami oraz pie. Nalezy wówaczas użyć flagi `-static-pie`.
+Kompilatory `gcc` oraz `clang` domyślnie używają pie podczas kompilacji. Aby nie kompilwować aplikacji z pie nalezy dodać flagę `-no-pie`. Warto wspomnieć, że domyslnie nie jest możliwe kompilwoanie programu z statycznymi bibliotekami oraz pie. Nalezy wówaczas użyć flagi `-static-pie`.
 
 
 ## 4. Różnice w Windows i Linux
@@ -67,11 +67,15 @@ Kompilatory `gcc` oraz `clanf` domyślnie używają pie podczas kompilacji. Aby 
 
 W obu systemach celem ASLR jest randomizacja adresów, jednakże występuje różnica w ich implementacji.
 
-W linuxie ASLR jest `compile-time option`. ASLR implemententowawny jest przez kernel. Oznacza to, że ASLR ma wpływ na wydahność aplikacji, ponieważ ASLR musi być kompilowany z PIE. Badania wskazują, że może to prowadzić do 10-26% strat w wydajności w  przypadku architektury x86, jednakże na architekturze x86_64 straty są już niewielkie ze względu na większą ilosć rejestrów.
+W linuxie ASLR jest `compile-time option`. ASLR implemententowawny jest przez kernel. ASLR ma wpływ na wydajność aplikacji, ponieważ aplikacje obsługujące ASLR muszą być kompilowany z PIE. Badania wskazują, że może to prowadzić do 10-26% strat w wydajności w  przypadku architektury x86, jednakże na architekturze x86_64 straty są już niewielkie ze względu na większą ilość rejestrów.
 
 
 W windowsie ASLR jest `link-time option`. Kod jest patch-owany podczas pracy programu. Włączaony jest przez opcję `/DYNAMICBASE`. ASLR na architekturze x86 nie powoduje strat wydajności, a może wystąpić nawet jej poprawa. Warto jednak nadmienić, że ASLR może spowodować wolniejsze ładowaniue modułów.
 
+
+W Linux ASLR można włączyć i wyłaczyć systemowo przy pomocy komendy `echo X | sudo tee /proc/sys/kernel/randomize_va_space`, gdzie `X = 0` to ASLR wyłączony, a `X = 2` ASLR włączony.
+
+W Windows ASLR można właczyć i wyłączyć systemowo poprzez komendę `Set-Processmitigation -Name name.exe -OPTION ForceRelocateImages`, gdzie `OPTION=Disable` to ASLR wyłączony, a `OPTION=Enable` ASLR włączony.
 
 ## 5.1 Przykładowa aplikacja - atak na aplikację z róznymi ustawieniami ASLR i PIE
 
@@ -86,9 +90,9 @@ Pierwotne założenia kompilacji:
 * PIE - w zależności od podpunkty
 * ASLR - w zależności od podpunktu
 
-Poniżej znajduje się kod podatnej aplikacji. Ten sam kod aplikacji został użyty we wszystkich atakach w tym opracowaniu. Podatnościami w przypadku tej aplikacji jest używanie funkcji `gets()` oraz `printf()`, a takżę metoda `win`, która pozwala zdobyć shell-a. Celem ataków jest dostanie się do tej funkcji.
+Poniżej znajduje się kod podatnej aplikacji. Ten sam kod aplikacji został użyty we wszystkich atakach w tym opracowaniu. Podatnościami w przypadku tej aplikacji jest używanie funkcji `gets()` oraz `printf()`, a takżę bardzo niebezpieczna metoda `win`, która pozwala zdobyć shell-a. Celem ataków jest dostanie się do tej funkcji.
 
-```c
+```c=
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -118,13 +122,13 @@ int main(int argc, char *argv[])
 
 
 
-Aby zdobyć shella nalezy:
+Aby zdobyć shella należy:
 
 * odnaleźć adres funkcji `win`
-* odnaleźć padding 
+* odnaleźć padding
 
 
-W przypadku każdego z popunktów padding jest identyczny i wynosi 28 znaków. Jako payload wysyłam ciąg znaków wygenerowany przez narzędzie `cyclic` dostarczone wraz z pwntools. Generwaony ciąg jest ciągiem `de Bruijna`. Powoduje to, że każdy podciąg w danym ciągu występuje tylko raz. Poprzez komendę `cyclic X` tworzymy ciąg, gdzie X to długość ciągu, następnie sprawdzamy na jaką wartością zostanie nadpisany adres powrotu. Do obliczenia  padding użyłem komendy `cyclic -l sequence` gdzie sequence to wartośc w eip.
+W przypadku każdego z popunktów padding jest identyczny i wynosi 28 znaków. Aby go obliczyć wysyłam ciąg znaków wygenerowany przez narzędzie `cyclic` dostarczone wraz z pwntools. Generwaony ciąg jest ciągiem `de Bruijna`. Powoduje to, że każdy podciąg w danym ciągu występuje tylko raz. Poprzez komendę `cyclic X` tworzymy ciąg, gdzie X to długość ciągu, następnie sprawdzamy na jaką wartością zostanie nadpisany adres powrotu. Do obliczenia  padding użyłem komendy `cyclic -l sequence` gdzie sequence to nadpisana wartość adresu powrotu.
 
 ![](pictures/1_padding.png)
 
@@ -137,7 +141,7 @@ PLIKI:
 3. `exploit-1.py`
 -------------
 
-Jako że ASLR oraz PIE jest wyłączone, adres funkcji `win` jest stały. Oznacza to, że adres mogę pobrać bezpośrednio z `gdb`. Wówczas exploit to podanie odpowiedniego paddingu oraz nadpisanie adresu powrotu adresem funkcji `win`.
+Jako że ASLR oraz PIE są wyłączone, adres funkcji `win` jest stały. Oznacza to, że adres mogę pobrać bezpośrednio z `gdb`. Wówczas exploit to podanie odpowiedniego paddingu oraz nadpisanie adresu powrotu adresem funkcji `win`.
 
 
 ![](pictures/1_1_win_addres.png)
@@ -145,7 +149,7 @@ Jako że ASLR oraz PIE jest wyłączone, adres funkcji `win` jest stały. Oznacz
 
 Kod prostego exploitu znajduje się poniżej.
 
-```python
+```python=
 #!/usr/bin/env python3
 
 from pwn import *
@@ -184,11 +188,11 @@ PLIKI:
 
 
 
-W przypadku tego ustawienia, asm skompilowanej aplikacji oparty jest na liczeniu offsetów. Jednakże, base addres jest stały, gdyż nie używamy ASLR. 
+W przypadku tego ustawienia, asm skompilowanej aplikacji oparty jest na liczeniu offsetów. Jednakże, base addres jest stały, gdyż nie używamy ASLR.
 
 Base addres można poznać uruchamiając aplikację w `gdb` i używając komendy `vvmap`. Adres bazowy to `0x56555000`. Offset do funkcji `win` rówieniż pobrałem za pomocą `gdb` używając komendy `disasseble win` - jest to wartość `0x11c9`.
 
-```python
+```python=
 #!/usr/bin/env python3
 
 from pwn import *
@@ -246,11 +250,11 @@ PLIKI:
 3. `exploit-3.py`
 -------------
 
-W takim przypadku takim, wszystkie segmenty pamięci są losowane. Skok do funkcji `win` jest niemalże niemożliwy jeżeli nie zleakujemy adresu bazowego PIE. Możliwe jest to tylko jeżeli występuje podatność pozwalająca leakować pamieć.
+W takim przypadku, wszystkie segmenty pamięci są losowane. Skok do funkcji `win` jest niemalże niemożliwy jeżeli nie zleakujemy adresu bazowego PIE. Możliwe jest to tylko jeżeli występuje podatność pozwalająca leakować pamieć.
 
-Do wyleakowania adresów na stosie używam podatności funkcji `printf`, która jest w stanie wypisać wartości ze stosu po zastosowaniu odpowiednich specyfikatórów - w tym przypadku jest to `%p`, ponieważ wyświetla in wartści z `0x` na początku, co umożliwia wypisanie większej ilości stosu.
+Do wyleakowania adresów na stosie używam funkcji `printf`, która jest w stanie wypisać wartości ze stosu po zastosowaniu odpowiednich specyfikatórów - w tym przypadku jest to `%p`, ponieważ wyświetla ona wartści z `0x` na początku, co umożliwia wypisanie większej ilości stosu.
 
-```python
+```python=
 from pwn import *
 
 p = process('./vuln-2.o')
@@ -268,14 +272,14 @@ for i in range(len(data)):
 
 
 
-Po wypisaniu wartości okazało się, że 4 wartość to jeden z adresów w funkcji `vuln`. Zatem obliczając jedynie offset tej isntrukcji do funkcji `win` jestem w stanie uzyskać adres `win`. 
+Po wypisaniu wartości okazało się, że 4 wartość to jeden z adresów w funkcji `vuln`. Zatem obliczając jedynie offset tej instrukcji do funkcji `win` jestem w stanie uzyskać adres `win`.
 
 
 ![](pictures/1_alsr_pie_offset.png)
 
-Zatem aby uzyskać adres `win` należy odjąc offset od zleakowanej instrukcji. Finalnie exploit wygląda następująco.
+Zatem aby uzyskać adres `win` należy odjąć offset od zleakowanej instrukcji. Finalnie exploit wygląda następująco.
 
-```python
+```python=
 #!/usr/bin/env python3
 
 from pwn import *
@@ -323,11 +327,11 @@ Warto zauważyć, że gdyby nie podatność programu w postaci możliwości wyli
 
 
 
-`ROP` - Return-Oriented Programing jest techniką exploitacji programu poprzez wykonywanie kodu na atakowanej maszynie. W tym przypadku, zamiast wstrzykiwać kod uzywamy isntrukcji zawartycj już w aplikacji. Instrukcje takie, zwane `gadgetami`, muszą zawierać instrukcję `ret` aby przechodzić do kolejnych gadżetów.
+`ROP` - Return-Oriented Programing jest techniką exploitacji programu poprzez wykonywanie kodu na atakowanej maszynie. W tym przypadku, zamiast wstrzykiwać kod używamy isntrukcji zawartycj już w aplikacji. Instrukcje takie, zwane `gadget`-ami, muszą po sobie zawierać instrukcję `ret` aby przechodzić do kolejnych gadget-ów.
 
 W przypadku dwóch opisanych ataków, celem jest wykonanie syscalla `exceve()` z odpowiednimi argumentami, aby otrzymać shella. Zatem aby tego dokonać wymagane jest:
 
-* ustawienie rejestru `eax` na wartość 0xb
+* ustawienie rejestru `eax` na wartość `0xb`
 * ustawienie rejestru `ebx` aby wskazywał na `\bin\\sh`
 * wyzerowwanie rejestrów `ecx` oraz `edx`
 
@@ -337,13 +341,13 @@ Założenia kompilacji:
 
 * Kompilacja na 32-bit = `-m32`
 * Włączone NX - brak możliwości wykonania kodu maszynowego ze stosu
-* Wyłączone Stack Cannary = `-fno-stack-protector` - przepełnienie bufora bez potrzeby leakowania kanarka (w checksec kanarek jest widoczny ponieważ kompilujemy statycznie)
+* Wyłączone Stack Cannary = `-fno-stack-protector` - przepełnienie bufora bez potrzeby leakowania kanarka (w checksec kanarek jest widoczny ponieważ linkujemy bibliotekę statycznie)
 * PIE - w a) wyłączony , w b) włączony
-* ASLR - włączony - adres stosu jest losowy
+* ASLR - włączony - powoduje to, że adres stosu jest losowy
 * Statyczna kompilacja `-static` w przypadku a) i `-static-pie` w przypadku b)
 
 
-Kod aplikacji jest ten sam co we wszytskich punktach. Wykorzystywanymi podantościami są `gets()` i `printf()`.
+Kod aplikacji jest ten sam co w poprzednich punktach. Wykorzystywanymi podantościami są `gets()` i `printf()`.
 
 
 ### a) ASLR & NO PIE
@@ -358,7 +362,7 @@ PLIKI:
 
 W przypadku konfiguracji bez `PIE` odnalezienia adresów gadgetów jest trywialne. Sekcja text, w której znajduje się kod aplikacji jest stały. Gdgety który odnalazłem pozwalają mi umieścić argument `/bin//sh` w odpowiednie miejsce w pamięci, a także powalają mi ustawic wartości w rejestrach na takie, które są potrzeben do wykonania syscalla.
 
-```python
+```python=
 0x080793c4 : mov dword ptr [eax], edx ; ret
 0x08065abe : pop edx ; pop ebx ; pop esi ; ret
 0x0805bf75 : pop ebp ; mov eax, edx ; ret
@@ -370,10 +374,10 @@ W przypadku konfiguracji bez `PIE` odnalezienia adresów gadgetów jest trywialn
 
 
 
-Posługując się tymi gadgetami jestem w stanie stworzyć odpowiednie funkcje, które będą wykonywać rózne czynności, typu ustawienie rejestru lub zapisanie wartości pod dany adres. Poniżej znajdują się odpowiednie funkcje, do rejestrów których nie potrzebuję ustawiać, czyli `esi` oraz `ebp` wstawiam wartość `0xfadeface` - służyło to jedynie w celach debugowania, może to być równie dobrze 0.
+Posługując się tymi gadgetami jestem w stanie stworzyć odpowiednie funkcje, które będą wykonywać różne czynności, typu ustawienie rejestru lub zapisanie wartości pod dany adres. Poniżej znajdują się odpowiednie funkcje. Do rejestrów których nie potrzebuję ustawiać, czyli `esi` oraz `ebp` wstawiam wartość `0xfadeface` - służyło to jedynie w celach debugowania, może to być równie dobrze 0.
 
 
-```python
+```python=
 def set_edx_ebx(edx,ebx):
     return p32(0x08065abe) + p32(edx) + p32(ebx) + p32(0xfadeface) 
 
@@ -393,15 +397,15 @@ def int80():
 
 
 
-Ostatnim elementem było odnalezienie odpowiedniego miejsca, w które mógłbym napisać wartość `\bin\\sh`. Możlowości są dwie:
-* wyleakować adres ze stosu, a następnie obliczyć offset na nasz buffor - w takim przypadku gadgety odpowiadające za zapis na na stos byłby niepotrzebne
+Ostatnim elementem było odnalezienie odpowiedniego miejsca, w które mógłbym zapisać wartość `\bin\\sh`. Możlowości są dwie:
+* wyleakować adres ze stosu, a następnie obliczyć offset na nasz buffor - w takim przypadku gadget odpowiadający za zapis na na stos byłby niepotrzebny
 * odnaleźć wolne miejsce w sekcji bss aplikacji - ten sposób wykorzytsałem w tym przypadku
 
 
 
-Aby odnaleźć sekcję `bss` programu poslużyłem się dekompilatorem `gihidra`. Każda sekcja zawsze jest wyrównana do 12 bitów. W dekompilatorze widać, że sekcja bss kończy się przed adresie `0x080e8140`. Oznacza to, że pamięć od adresu `0x080e8144` jest wolna. Można to sprawdzić za pomocą komendy `hexdump 0x080e8144` w gdb.  Warto zauważyć, że w tej sekcji pamięci jest wiele wolnego miejsca, w tym przypadku znajduje się tam jeszcze `0xebc` wolnych byteów.
+Aby odnaleźć sekcję `bss` programu poslużyłem się dekompilatorem `Ghidra`. Każda sekcja zawsze jest wyrównana do 12 bitów. W dekompilatorze widać, że sekcja bss kończy się na adresie `0x080e8140`. Oznacza to, że pamięć od adresu `0x080e8144` jest wolna. Można to sprawdzić za pomocą komendy `hexdump 0x080e8144` w gdb.  Warto zauważyć, że w tej sekcji pamięci jest wiele wolnego miejsca, w tym przypadku znajduje się tam jeszcze `0xebc` wolnych byt-ów.
 
-```python
+```python=
 >>> 0x1000 - 0x144
 3772
 >>> hex(_)
@@ -413,7 +417,7 @@ Aby odnaleźć sekcję `bss` programu poslużyłem się dekompilatorem `gihidra`
 
 Kolejnym etapem było stworzenie shellcode, który po dodaniu odpowiedniego paddingu ustawia odpowiednie rejestry. Shellcode wywołuje odpowiednie funkcje zdefiniowane wcześniej.
 
-```python
+```python=
 shellcode = b''.join([
     b"A" * 28,
     write_to_mem(buffor, u32("/bin")),
@@ -430,7 +434,7 @@ shellcode = b''.join([
 
 Finalnie exploit prezentuje się następująco.
 
-```python
+```python=
 #!/usr/bin/env python3
 
 from pwn import *
@@ -502,14 +506,15 @@ Pliki:
 1. `vuln.c`
 2. `vuln-4.o`
 3. `exploit-5.py`
+-----------------
 
-Exploitacja programu z `PIE` jest o tyle trudniejsza, ponieważ sekcja text jest równiez ruchoma. Aby odnaleźć offset, dzięki któremu wiem gdzie znajdują się wszytskie isntrukcji posłużyłem się identycznym sposobem co w punkcie `5.1 d)` - schemat jak to zrobiłem jest przedstawiony we wskazanym punkcie. 
+Exploitacja programu z `PIE` jest o tyle trudniejsza, ponieważ sekcja text jest również ruchoma. Aby odnaleźć offset, dzięki któremu będę wiedzieć gdzie znajdują się wszytskie isntrukcji posłużyłem się identycznym sposobem co w punkcie `5.1 d)` - schemat wykonania przedstawiony we wskazanym punkcie.
 
-W tym przypadku wartość `/bin//sh` zapisuję na stosie, a dokładnie w bufforze w którym występuje BOF. Adres bufora uzyskuję poprzez lekowania wartość ze stosu - druga wartośc wypisana ze stosu okazuje się być wskaźnikiem na pewne miejsce w stosie. Po odnalezieniu tego miejsca w `gdb` odjałem odpowiednią wartość, czyli `0xd4` co pozowliło uzyskać odpowiedni adres.
+W tym przypadku wartość `/bin//sh` zapisuję na stosie, a dokładnie w bufforze w którym występuje BOF. Adres bufora uzyskuję poprzez lekowania wartość ze stosu - druga wartośc wypisana ze stosu okazuje się być wskaźnikiem na pewne miejsce na stosie. Po odnalezieniu tego miejsca w `gdb` odjałem odpowiednią wartość, czyli `0xd4` co pozowliło uzyskać odpowiedni adres.
 
 Gadgety które odnalazłem w tym  przypadku służą jedynie do ustawienia odpowiednich rejestrów, a mianowicie `exc`, `ebx` oraz `eax`.
 
-```python
+```python=
 0x0006a883 : add al, 0x8b ; inc eax ; pop eax ; ret
 0x0001fc5e : pop edx ; pop ebx ; pop esi ; ret
 0x0000301e : pop ebx ; ret 
@@ -520,9 +525,9 @@ Gadgety które odnalazłem w tym  przypadku służą jedynie do ustawienia odpow
 
 
 
-Aby wykorzystać te gadgety stworzyłem odpowiednie funkcje. W tym przypadku należy jednak dodać odpowiedni offset, który pozwoli odwołąć się do rzeczywistych adresów instrukcji w pamieci aplikacji. 
+Aby wykorzystać te gadgety stworzyłem odpowiednie funkcje. W tym przypadku należy jednak dodać odpowiedni offset, który pozwoli odwołąć się do rzeczywistych adresów instrukcji w pamieci aplikacji.
 
-```python
+```python=
 def set_eax(eax):
     return p32(offset + 0x0006a883) + p32(eax)
 
@@ -542,9 +547,9 @@ def int80():
 
 
 
-Kolejnym etapem było stworzenie shellcodu. Składa się on z dodania odpowiedniego paddingu, w którego w skład wchodzi argument `\bin\\sh` zakończony null bytem oraz odpowiednich instrukcji ustawiające odpowiednie rejestry.
+Kolejnym etapem było stworzenie shellcodu. Składa się on z odpowiedniego paddingu, w którego w skład wchodzi argument `\bin\\sh` zakończony null bytem oraz odpowiednich instrukcji ustawiające odpowiednie rejestry.
 
-```python
+```python=
 shellcode = b''.join([
     p32(u32('/bin')),
     p32(u32('//sh')),
@@ -560,10 +565,10 @@ shellcode = b''.join([
 
 
 
-Ostatecznie exploit wygląda następująco. 
+Ostatecznie exploit wygląda następująco.
 
 
-```python
+```python=
 #!/usr/bin/env python3
 
 from pwn import *
@@ -645,9 +650,9 @@ W wyniku powyższego exploita otrzymujemy shella. Na potrzeby screenshota zakome
 
 
 
-Ochrona aplikacji poprzez używanie tylko ASLR lub PIE jest pozbawiona sensu. W przypadku użycia tylko ASLR sekcja text jest stała co sprawia, że atak ROP jest możliwy. W przypadku samego PIE znam adres bazowy, gdyż jest to stała wartość.
+Ochrona aplikacji poprzez używanie tylko ASLR lub PIE jest pozbawiona sensu. W przypadku użycia tylko ASLR sekcja text jest stała co sprawia, że atak ROP jest możliwy. W przypadku samego PIE adres bazowy jest znany, gdyż jest to stała wartość.
 
-Aby zabezpieczyć aplikację należy użyć obie metody - ASLR i PIE.  Gwarantuje to losowość każdej sekcji w programie. Dzięki temu bezpieczeństwo znacznie się poprawia. Należy jednak unikać niebezpiecznych funkcji pogroju `gets()` oraz `printf()` gdyż pozwalają one ominąć te zabezpieczenia poprzez liczenie odpowiednich offsetów do sekcji, do którch atakujący chce się dostać.
+Aby zabezpieczyć aplikację należy użyć obu metod - ASLR i PIE.  Gwarantuje to losowość każdej sekcji w programie. Dzięki temu bezpieczeństwo znacznie się poprawia. Należy jednak unikać niebezpiecznych funkcji pogroju `gets()` oraz `printf()` gdyż pozwalają one ominąć te zabezpieczenia poprzez liczenie odpowiednich offsetów do sekcji, do których atakujący chce się dostać.
 
 
 
