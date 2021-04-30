@@ -1,5 +1,3 @@
-//gcc vuln.c -o vuln -m32 -fno-stack-protector -z execstack
-
 #include <stdio.h>
 #include <string.h>
 

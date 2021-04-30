@@ -71,19 +71,19 @@ Tak jak wspomniałem wcześniej, stack canary jest metodą, która może uchorni
 
 Założenia kompilacji:
 * Kompilacja na 32-bit = `-m32`
-* Wyłączone ASLR = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space`
-* Wyłączone NX = `-z execstack`
-* Wyłączone Stack Cannary = `-fno-stack-protector`
-* Wyłączone PIE - `no-pie` 
+* Wyłączone ASLR = `echo 0 | sudo tee /proc/sys/kernel/randomize_va_space` -  wyłączona radomizacja adresów, aby nie liczyć offsetów
+* Wyłączone NX = `-z execstack` - brak możliwośco wykonania kodu maszynowego ze stosu
+* Wyłączone Stack Cannary = `-fno-stack-protector` - przepełnienie bufora bez potrzeby leakowania kanarka
+* Wyłączone PIE - `no-pie` - w celu bezpośredniego pobrania adresu buffora z asm skompilowanej aplikacji
 ```c
 #include <stdio.h>
 #include <string.h>
 
 void vuln()
 {
-        char buffer[16];
-        gets(buffer);
-        printf("Buffer = %p", buffer);
+	char buffer[16];
+    gets(buffer);
+    printf("Buffer = %p", buffer);
 }
 
 int main(int argc, char *argv[])
@@ -144,17 +144,17 @@ Założenia kompilacji:
 
 void vuln()
 {
-        char buffer[600];
-        gets(buffer);
-        printf(buffer);
-        printf("\n");
-        gets(buffer);
+	char buffer[600];
+    gets(buffer);
+    printf(buffer);
+    printf("\n");
+    gets(buffer);
 }
 
 int main(int argc, char *argv[])
 {
-        vuln();
-        return 0;
+    vuln();
+    return 0;
 }
 ```
 

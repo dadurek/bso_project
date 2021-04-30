@@ -55,15 +55,15 @@ Poniżej znajduje się kod podatnej aplikacji. Podatność znajduje się w funkc
 
 void vuln()
 {
-	char buffer[16];
-	gets(buffer);
-	printf("Buffer = %p", buffer);
+    char buffer[16];
+    gets(buffer);
+    printf("Buffer = %p", buffer);
 }
 
 int main(int argc, char *argv[])
 {
-	vuln();
-	return 0;
+    vuln();
+    return 0;
 }
 ```
 
@@ -185,15 +185,15 @@ Kod podatnej aplikacji znajduje się poniżej. Tak jak w poprzedniej wersji, pod
 
 void vuln()
 {
-        char buffer[16];
-        gets(buffer);
-        printf("Buffer = %p", buffer);
+    char buffer[16];
+    gets(buffer);
+    printf("Buffer = %p", buffer);
 }
 
 int main(int argc, char *argv[])
 {
-        vuln();
-        return 0;
+    vuln();
+    return 0;
 }
 ```
 

