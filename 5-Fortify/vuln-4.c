@@ -1,20 +1,20 @@
 #include <stdio.h>
 #include <string.h>
 
-#define N 8
+#define N 4
 
 struct A
 {
-	struct B
-	{
-		char buf[N];
-	} b;
-	char buf[N];
+	char buf1 [N];
+	char buf2 [N];
 } a;
 
 
 int main(int argc, char *argv[])
 {
-	strcpy(&a.b.buf[1], "deadbead");
+	strcpy(a.buf1, argv[1]);
+	printf("buf1: %s", a.buf1);
+	putchar('\n');
+	printf("buf2: %s", a.buf2);
 	return 0;
 }
