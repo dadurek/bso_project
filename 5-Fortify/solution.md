@@ -22,7 +22,7 @@ W funcjach do sprawdzania wielkości buffora używana jest funkcja `__builtin_ob
 
 ## 2. Wydajność
 
-Jest to technika, która może zwiększyć ilość kodu. Związane jest to oczywiscie z dodatkowymi wrapperami funkcji i dodatkowymi sprawdzaniami zapewniającymi bezpieczeństwo. Ilość dodatkowego kodu zalezy jednak od kodu jaki kompilujemy, używanych funkcji oraz poziomu zabezpieczenia ` __FORTIFY_SOURCE`.
+Jest to technika, która może zwiększyć ilość kodu. Związane jest to oczywiscie z dodatkowymi wrapperami funkcji i dodatkowymi sprawdzeniami zapewniającymi bezpieczeństwo. Ilość dodatkowego kodu zalezy jednak od kodu jaki kompilujemy, używanych funkcji oraz poziomu zabezpieczenia ` __FORTIFY_SOURCE`.
 
 Fortify nie wpływa negatywnie na performance apliakcji. Co więcej, stosowanie tej metody może wpłynąć pozytywnie na wydajność. [Test wydajnośći ](https://zatoichi-engineer.github.io/2017/10/06/fortify-source.html)
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 
 
 
-W tej apliakcji widać, że funkcja printf() stanowi duże niebezpieczeństwo, jest możliwość ataku typu format string (atak takiego typu w katalogu `4-Relro`). Jednakże dzięki temu, że używamy `fortify` w wersji `2` atak format string nie może mieć miejsca. Funkcja printf zostaje zastępiona odpowiednim wrapperem - w tym przyapdku jest to `__printf_chk@plt`. Funkcja ta sprawdza, czy w bufferze przekazanym do printf() nie znajdują się niebezpieczne modyfikator - `%n` (modyfikator ten jest w stanie pod wskazasny adres zapisać taką wartość, jaką printf wypisał na konsolę).
+W tej apliakcji widać, że funkcja printf() stanowi duże niebezpieczeństwo, jest możliwość ataku typu format string (atak takiego typu w katalogu `4-Relro`). Jednakże dzięki temu, że używamy `fortify` w wersji `2` atak format string nie może mieć miejsca. Funkcja printf zostaje zastąpiona odpowiednim wrapperem - w tym przyapdku jest to `__printf_chk@plt`. Funkcja ta sprawdza, czy w bufferze przekazanym do printf() nie znajdują się niebezpieczne modyfikator - `%n` (modyfikator ten jest w stanie pod wskazasny adres zapisać taką wartość, jaką printf wypisał na konsolę).
 
 Przy próbie ataku format string podając `%n` funkcja wrapper dla printf() zauważa niebezpieczenstwo, i dostajemy błąd w postaci `%n in writable segment detected`, po czym program jest terminowany.
 
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 
 W tym przypadku mamy strukturę, do której chcemy zapisać argument przekazywany przez konsolę. Omówię tutaj różnicę, pomiędzy poziomami zabezpieczenia przez `Fortify`.
 
-W przypadku ustawienia `-D_FORTIFY_SOURCE=1` możliwe jest wystąpnie buffer overflow w obrębie struktury. Oznacza to, że w tym przypadku podczas próby zapisu do `buf1` o długości nie większej niż 7 znaków nie otrzymamy błędu (jest to 7 znaków gdyż należy pamietać o null byte). Poniżej znajduje się screen, który pokazuje, że przekazując do 7 znaków program zachowuje się poprawnie, tzn zapisywany jest również `buf2`. W przypadku podania większej ilości znaków program zwraca błąd `buffer overflow detected`.
+W przypadku ustawienia `-D_FORTIFY_SOURCE=1` możliwe jest wystąpnie buffer overflow w obrębie struktury. Oznacza to, że w tym przypadku podczas próby zapisu do `buf1` o długości nie większej niż 7 znaków nie otrzymamy błędu (jest to 7 znaków gdyż należy pamietać o null byte). Poniżej znajduje się screen, który pokazuje, że przekazując do 7 znaków program zachowuje się poprawnie, tzn. zapisywany jest również `buf2`. W przypadku podania większej ilości znaków program zwraca błąd `buffer overflow detected`.
 
 ![](pictures/4_1.png)
 
