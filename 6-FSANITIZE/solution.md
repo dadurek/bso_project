@@ -29,10 +29,10 @@ Plik:
 
 int main(int argc, char** argv)
 {
-		char * buffer = malloc(1024);
-		sprintf(buffer, "%d", argc);
-		printf("%s",buffer);
-		return EXIT_SUCCESS;
+    char * buffer = malloc(1024);
+	sprintf(buffer, "%d", argc);
+	printf("%s",buffer);
+	return EXIT_SUCCESS;
 }
 ```
 
@@ -68,10 +68,10 @@ Plik:
 
 int main(void)
 {
-        const char buf1 [] = "Test of sanitizers";
-        char buf2 [N];
-        strcpy(buf2, buf1);
-        return EXIT_SUCCESS;
+    const char buf1 [] = "Test of sanitizers";
+    char buf2 [N];
+    strcpy(buf2, buf1);
+    return EXIT_SUCCESS;
 }
 
 ```
@@ -103,21 +103,21 @@ Plik:
 
 void set_val(bool *b, int val)
 {
-                if(val == 1){
-                        *b = false;
-                }
+    if(val == 1){
+        *b = false;
+    }
 }
 
 int main(void)
 {
-                bool b;
-                int val;
-                scanf("%d", &val);
-                set_val(&b, val);
-                if (b) {
-                        puts("Value set");
-                }
-                return EXIT_SUCCESS;
+    bool b;
+    int val;
+    scanf("%d", &val);
+    set_val(&b, val);
+    if (b) {
+        puts("Value set");
+    }
+    return EXIT_SUCCESS;
 }
 ```
 
@@ -152,16 +152,16 @@ int val;
 
 void *Thread1(void *x)
 {
-        val = 1;
-        return x;
+    val = 1;
+    return x;
 }
 
 int main() {
-  pthread_t thread;
-  pthread_create(&thread, NULL, Thread1, NULL);
-  val = 2;
-  pthread_join(thread, NULL);
-  return val;
+    pthread_t thread;
+    pthread_create(&thread, NULL, Thread1, NULL);
+    val = 2;
+    pthread_join(thread, NULL);
+    return val;
 }
 ```
 
@@ -192,9 +192,9 @@ Pliki:
 
 int main(void)
 {
-        int x = 0x7fffffff;
-        x += 1;
-        return 0;
+    int x = 0x7fffffff;
+    x += 1;
+    return 0;
 }
 ```
 
@@ -209,13 +209,13 @@ Powyżej znajduje się funkcja w której od razu można zauważyć błąd - wyst
 
 int main(void)
 {
-        int x = 1 /0;
-        return x;
+    int x = 1 /0;
+    return x;
 }
 ```
 
 
-Powyższy kod to kunszt prawdziwego programisty - dzielenie przez zero. Faktem jest jednak że często występują sytuacje w których coś takiego może nastąpić. Wówczas zostajemy powiadomieni o tym poprzez warning. Ważne jest tez to, że dostajemy miejsce w którym taka sytacja miała miejsce.
+Powyższy kod to kunszt domorosłego programisty - dzielenie przez zero. Faktem jest jednak że często występują sytuacje w których coś takiego może nastąpić. Wówczas zostajemy powiadomieni o tym poprzez warning. Ważne jest tez to, że dostajemy miejsce w którym taka sytacja miała miejsce.
 
 
 ## Źródła

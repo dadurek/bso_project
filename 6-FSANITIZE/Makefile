@@ -19,4 +19,4 @@ make:
 	${CC1} vuln-6.c -o vuln-6.o ${UNDEFINED} 
 
 clean:
-	rm -f vuln-*.o
+	rm -f *.o

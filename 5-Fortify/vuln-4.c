@@ -9,7 +9,6 @@ struct A
 	char buf2 [N];
 } a;
 
-
 int main(int argc, char *argv[])
 {
 	strcpy(a.buf1, argv[1]);

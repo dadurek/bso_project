@@ -10,4 +10,4 @@ make:
 	${CC} vuln-4.c -o vuln-4-2.o ${CFLAGS2}
 
 clean:
-	rm -f vuln-1.o vuln-2.o vuln-3.o vuln-4-1.o vuln-4-2.o
+	rm -f *.o

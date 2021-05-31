@@ -7,4 +7,4 @@ make:
 	${CC} vuln.c -o vuln-3.o ${CFLAGS} -z relro -z now
 
 clean:
-	rm -f vuln-1.o vuln-2.o vuln-3.o
+	rm -f *.o

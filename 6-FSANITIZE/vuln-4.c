@@ -8,10 +8,10 @@ void *Thread1(void *x)
 	return x;
 }
 
-int main() {
-  pthread_t thread;
-  pthread_create(&thread, NULL, Thread1, NULL);
-  val = 2;
-  pthread_join(thread, NULL);
-  return val;
+int main(void) {
+    pthread_t thread;
+    pthread_create(&thread, NULL, Thread1, NULL);
+    val = 2;
+    pthread_join(thread, NULL);
+    return val;
 }
