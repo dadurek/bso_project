@@ -2,20 +2,19 @@
 
 ## 1. Opis
 
-`Relro` - Relecation Read-Only - jest to technika zabezpieczania aplikacji poprzez oznaczanie sekcji GOT oraz PLT jako sekcje tylko do odczytu. Dzięki temu, napisanie tych sekcji jest niemożliwe co uniemożliwia ataki typu ret2plt.
+`Relro` - Relecation Read-Only - jest to technika zabezpieczania aplikacji poprzez oznaczanie sekcji GOT oraz PLT jako sekcje tylko do odczytu.
 
 
-W przypadku dynamicznie ładowanych bibliotek tablica GOT zapełniana jest podczas trwania programu. Gdy po raz pierwszy wołujemy funkcję biblioteczną GOT zawiera pointer powrotny do PLT, gdzi dynamiczny linker zostaje wywołany. Gdy linker odnajdzie już tą dunkcję zapisują ja w GOT, co pozwala w przy kolejnym użyciu tej samej fukncji bezpośrednie pobranie adresu z GOT, zamiat ponownego wołania dynamicznego linkera - jest to tak zwane `lazy binding`.
+W przypadku dynamicznie ładowanych bibliotek tablica GOT zapełniana jest podczas trwania programu. Gdy po raz pierwszy wywołujemy funkcję biblioteczną GOT zawiera pointer powrotny do PLT, gdzie dynamiczny linker zostaje wołany. Gdy linker odnajdzie już tę funkcję zapisują ją w GOT, co pozwala w przy kolejnym użyciu tej samej fukncji bezpośrednie pobranie adresu z GOT, zamiat ponownego wołania dynamicznego linkera - jest to tak zwane `lazy binding`.
 
 
 Istnieją dwa tryby Relro:
 * `partial` - tylko sekcja `.got` oznaczona zostaje jako `read only`. Dalej możliwe jest nadpisanie adresu `.got.plt` 
 * `full` - cała sekcja `GOT` jest oznaczona jako `read only`
 
+Dzieki użyciu full relro zabezpieczamy się przed atakmi polegającymi na nadpisaniu adresu w global offset table, co w znacznym stopniu zwiększa bezpieczeńśtwo aplikacji. 
 
-## 2. Wady i zalety
-
-Dzieki użyciu full relro zabezpieczamy się przed atakmi polegającymi na nadpisaniu adresu wglobal offset table, co w znacznym stopniu zwiększa bezpieczeńśtwo aplikacji. 
+## 2. Wydajność
 
 Należy jednak wspomnieć o negatywnym wpływie tej metody zabezpieczania aplikacji na wydajność aplikacji jeżeli wybieramy full relro. Zwiększa ono znacznie czas startu programu, ponieważ wsyztskie symbole muszą zostać załadowane przed uruchomieniem przed uruchomieniem programu. W przypadku większych programów, w których używa się wielu funkcji bibliotecznych - w GOT będzie dużo wpisów - uruchomienie programu może być zauważalnie dłuższe. 
 
@@ -26,7 +25,7 @@ Ten sposób zabezpieczania nie ma jednak wpływu wpływu na wydajność już pod
 
 Partial Relro jest domyślnie włączone w przypadku kompilacji programu przez `gcc` oraz `clang`. 
 
-W przypadku obu kompilatorów aby wyłączyć partial relro nalezy zastosowac flagę `-Wl,-z,norelro`, natomiast aby właczyć full relro należy użyć flagi `-z,relro,now`.
+W przypadku obu kompilatorów aby wyłączyć partial relro nalezy zastosować flagę `-Wl,-z,norelro`, natomiast aby włączyć full relro należy użyć flagi `-z,relro,now`.
 
 
 ## 4. Przykładowa aplikacja
@@ -89,7 +88,7 @@ Aby odaleźc adres adres `puts` w programie posłużyłem się debugerem `gdb`. 
 
 ![](pictures/got.png)
 
-Z powyższego screena widać, że w got jest adres 0x804b2b4. Zawartośc tego adresu chcemy nadpisać adresem fukncji system, której adres można odnaleźć posługujac się komendą `print system` w gdb.
+Z powyższego screena widać, że w got jest adres `0x804b2b4`. Zawartośc tego adresu chcemy nadpisać adresem fukncji system, której adres można odnaleźć posługujac się komendą `print system` w gdb.
 
 ![](pictures/system.png)
 
@@ -99,11 +98,11 @@ Aby dokonać tego ataku potrzebowałem również wiedzieć na jakim miejscu na s
 
 ![](pictures/buffer.png)
 
-Wiedząc, że buffer jest na 4 miejscu na stosie, mogłem podać na stos miejsce w które chcę zapisać daną wartośc (czyli adres putchar z got), odpowiednią ilosć znaków odpowiadającą wartości adresu system, oraz specyfikator `%4$n`. Jednakże takie wpisywanie wartości jest dośc długie, gdyż musimy podać `0xf7e10040 = 4158718016` znaków, co jest bardzo dużą liczbą. Lepszym sposobem jest zapisanie tej wartości w dwóch etapach - zapisać po 2 bajty. Dzięki temu musimy podać znacząco mniej znaków.
+Wiedząc, że buffer jest na 4 miejscu na stosie, mogłem podać na stos miejsce w które chcę zapisać daną wartośc (czyli adres putchar z got), odpowiednią ilość znaków odpowiadającą wartości adresu system, oraz specyfikator `%4$n`. Jednakże takie wpisywanie wartości jest dośc długie, gdyż musimy podać `0xf7e10040 = 4158718016` znaków, co jest bardzo dużą liczbą. Lepszym sposobem jest zapisanie tej wartości w dwóch etapach - zapisać po 2 bajty. Dzięki temu musimy podać znacząco mniej znaków.
 
 Zatem pod pierwsze dwa bajty adresu `puts` chcę zapisać wartość `0x0040`.W zapisie dziesiętnym jest to `64`. Należy jednak pamiętać że modyfikator `%n` zapisuje taką wartość ile zostało wypisanych znaków, dlatego też podająć na początku 2 adresy (czyli już 8 znaków) muszę podać jeszcze tylko `64 - 8 = 56` znaków. Robię to poprzez `%4$56x`.
 
-Pod dwa kolejne bajty chcę zapisać wartość `0xf7e1` co w zapisie dziesiętynm przekłąda się na `63457`. Wcześniej wypisłem już na konsolę `64` znaki, zatem teraz potrzebuuję zapisać tylko `63457 - 64 = 63393` znaków. Robię to porzez `%63393x`.
+Pod dwa kolejne bajty chcę zapisać wartość `0xf7e1` co w zapisie dziesiętynm przekłada się na `63457`. Wcześniej wypisłem już na konsolę `64` znaki, zatem teraz potrzebuuję zapisać tylko `63457 - 64 = 63393` znaków. Robię to porzez `%63393x`.
 
 ```python
 exploit = b''
@@ -119,10 +118,10 @@ exploit += b'%5$n'
 
 
 
-Nalezy zauważyć, że gdy nadpiszemy warotość putchar w got, a nastepnei będziemy chieli wywołać system otrzymamy SIGSEV. Aby temu zapobiec należy wyczyścić buffor. W tym przypadku tobię to funkcjią `strcpy` do której podaje 'sh' - dzięki temu zamiast otrzymać dash, otrzymam od razu bash.
+Nalezy zauważyć, że gdy nadpiszemy warotość putchar w got, a następnie będziemy chieli wywołać system otrzymamy SIGSEV. Aby temu zapobiec należy wyczyścić buffor. W tym przypadku tobię to funkcjią `strcpy` do której podaje `sh` - dzięki temu zamiast otrzymać dash, otrzymam od razu bash.
 
 
-Finalnie exploit wygląda następująco
+Finalnie exploit wygląda następująco:
 
 ```python
 #!/usr/bin/env python3
@@ -155,7 +154,7 @@ p.interactive()
 
 
 
-W wyniku tego exploitu dostajemy shell. Screen poniżej jest w dwóch częściach, ponieważ na konsole wypisywane jest wiele pustych znaków - ta ilosc znków odpowaida wartościom zapisanym w GOT.
+W wyniku tego exploitu dostajemy shell. Screen poniżej jest w dwóch częściach, ponieważ na konsole wypisywane jest wiele znaków - ta ilość znaków odpowaida wartościom zapisanym w GOT.
 
 ![](pictures/shell1.png)
 
@@ -191,7 +190,7 @@ PLIKI:
 3. `exploit-3.py`
 ------------
 
-W przypadku aplikacji z `full` relro atak przedstawiony powyżej jest niemożliwe. Sekcja `.got` oraz `.got.plt` są `read only` i nie jesteśmy w stanie ich nadpisać.Przy próbie nadpisania dostajemy sygnał `SIGSEGV` - próba nadpisania chronionej pamieci.
+W przypadku aplikacji z `full` relro atak przedstawiony powyżej jest niemożliwe. Sekcja `.got` oraz `.got.plt` są `read only` i nie jesteśmy w stanie ich nadpisać. Przy próbie nadpisania dostajemy sygnał `SIGSEGV` - próba nadpisania chronionej pamięci.
 
 
 ![](pictures/3_shell.png)
