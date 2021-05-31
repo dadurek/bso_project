@@ -2,7 +2,7 @@
 
 ## 1. Opis
 
-Często spotykanym problemem wśród programistów piszących w językach `C` lub `C++` są problemy z pamiecią - oczywiście wirtualną pamiecią. Odwoływanie się do niezainicjalizowanej pamięci, wycieki pamięci, nie zwolnianie pamięci to są najczęstrze problemy z którymi się borykamy. W celu zminimalizowania takich błedów powstało wiele narzędzi - jednym z popularniejszych jest `valgrind`, które działa pod systemem linux/macOs lub `Application Verifier` lub `WinDbg` pod systemem Windows.. Jednakże, kest to program który nalezy używać dopiero po skompilowaniu programu. Aby odnajdować błedy już podczas kompilacji oraz w trakcie pracy rogramu powstała dodatkowa opcja w kompilatorach o nazwie `-fsanitize`. Jest to narzędzie bardzo przydatne podczas debugu. Oczywiste jesto to, że tej flagi nie będzie sie uzywać na produkcji ani realase, jednakże podczas budowania kodu oraz jego testowania pozwala to na znalezienie wielu potecnalnych błędów.
+Często spotykanym problemem wśród programistów piszących w językach `C` lub `C++` są problemy z pamiecią - oczywiście wirtualną pamiecią. Odwoływanie się do niezainicjalizowanej pamięci, wycieki pamięci, nie zwolnianie pamięci to są najczęstrze problemy z którymi się borykamy. W celu zminimalizowania takich błedów powstało wiele narzędzi - jednym z popularniejszych jest `valgrind`, które działa pod systemem linux/macOs lub `Application Verifier` lub `WinDbg` pod systemem Windows. Jednakże, jest to program który należy używać dopiero po skompilowaniu programu. Aby odnajdować błedy już podczas kompilacji oraz w trakcie pracy programu powstała dodatkowa opcja w kompilatorach o nazwie `-fsanitize`. Jest to narzędzie bardzo przydatne podczas debugu. Oczywiste jest to, że tej flagi nie będzie sie używać na produkcji ani realase, jednakże podczas budowania kodu oraz jego testowania pozwala to na znalezienie wielu potecnalnych błędów.
 
 Zdecydowaną zaletą używania sanitizer-ów nad valgrindem jest wydajność. Apliakcja ze skompilowanymi sanitizerem będzie zawsze szybsza niż odpalanie jej w narzedziu takim jak valgrind. Mówi się o 10x wolniejszym działaniu aplikacji z valgrind niż z sanitizerami. 
 
@@ -10,7 +10,7 @@ Ważne jest oczywiscie to, że do działania valgrinda nie potrzebujemy source-c
 
 ## 2. Gcc i Clang
 
-Gcc oraz Clang mają swoje własne wersje implementacji sanitizerów. Clang ma bogatszą opcję wybóru - w przypadku kompilatora gcc brakuje flagi `-fsanitize=memor`. Pomimo różnic, użycie tej flagi w obu przypadkach działa na tej samej zasadzie, do podajemy flagę `-fsanitize=option`, z odpowiednią `option` jaka nas interesuje.
+Gcc oraz Clang mają swoje własne wersje implementacji sanitizerów. Clang ma bogatszą opcję wybóru - w przypadku kompilatora gcc brakuje flagi `-fsanitize=memory`. Pomimo różnic, użycie tej flagi w obu przypadkach działa na tej samej zasadzie, do kompilatora podajemy flagę `-fsanitize=option`, z odpowiednią `option` jaka nas interesuje.
 
 
 
@@ -42,9 +42,9 @@ int main(int argc, char** argv)
 
 
 
-Powyżej znajduje się bardzo prosty oraz czesto wystepujący bład programistyczny. Alokujemy jeden kilobajt pamieci na stercie, po czym wykonujemy jakąs operację na tej pamięci. Brakuje jednak bardzo ważnej rzeczy - nie zwalniamy pamięci. Pamieć zostanie zwolniona dopiero po tym, jak program się zakończy.
+Powyżej znajduje się bardzo prosty oraz często wystepujący błąd programistyczny. Alokujemy jeden kilobajt pamięci, po czym wykonujemy jakąs operację na tej pamięci. Brakuje jednak bardzo ważnej rzeczy - nie zwalniamy pamięci. Pamięć zostanie zwolniona dopiero po tym, jak program się zakończy.
 
-Jak output z sanitizer-a dostajemy powiadomienie o wycieku pamięci. Na backtrace-sie widac dokładnie w którym miejscu miało to miejsce - w funkcji main w 6 linijce. Gdyby było więcej miejsc w którym zaszłą taka sytacja takich backtrace-ów byłoby więcej. Na samym końcu widzimy sumę pamięci która nie została zwolniona i w ilu miejscach to się stało.
+Jak output z sanitizer-a dostajemy powiadomienie o wycieku pamięci. Na backtrace-sie widac dokładnie w którym miejscu miało to miejsce - w funkcji main w 6 linijce. Gdyby było więcej miejsc w którym zaszła taka sytacja takich backtrace-ów byłoby więcej. Na samym końcu widzimy sumę pamięci która nie została zwolniona i w ilu miejscach to się stało.
 
 ![](pictures/address_1.png)
 
@@ -82,9 +82,9 @@ int main(void)
 
 Powyżej znajduje się ponownie kod z błędem. Bład polega na kopiowaniu `buf1` do `buf2`, jednakże wielkość `buf2` jest mniejsza niż `buf1`. Oznacza to, że wystąpi w takim przypadku buffer overflow. Jest to częsty błąd popełniany przez programistów, N jest o jeden byte za małe.
 
-Ciekawy jest fakt, że sam kompilaotr nie jest w stanie zauyważyć tego błedu. Pomimo kompilaowani pliku z flagami `-Wall -Wextra` nie dostajemy żadnego ostrzeżenia. Natomiast jeżeli uruchomimy taki program ze skompilowanym sanitizerem otrzymamy błąd w postaci wystapienia buffer overflow. Ponownie zostaniemy stacktrace oraz miejsce oraz miejsce w naszym kodzie, w którym taka sytuacja ma miejsce.
+Ciekawy jest fakt, że sam kompilaotr nie jest w stanie zauyważyć tego błędu. Pomimo kompilaowani pliku z flagami `-Wall -Wextra` nie dostajemy żadnego ostrzeżenia. Natomiast jeżeli uruchomimy taki program ze skompilowanym sanitizerem otrzymamy błąd w postaci wystapienia buffer overflow. Ponownie zostaniemy backtrace oraz miejsce w naszym kodzie, w którym taka sytuacja miała miejsce.
 
-W dokłaniejszym opisie błedu dostajemy, w której ramce wydarzyła się taka sytuacja, dokłądne granice danych bufforów a także hexdump. 
+W dokłaniejszym opisie błedu dostajemy, w której ramce wydarzyła się taka sytuacja, dokładne granice danych bufforów a także hexdump. 
 
 ![](pictures/address_2.png)
 
@@ -124,13 +124,13 @@ int main(void)
 
 
 
-Tak jak wspomniałem wcześniej, flaga ta jest dostępna tylo w `clang`, dlatego też kompiluje za pomocą tego kompilatora. Program skompilwoałem jedank równiez przy użyciu `gcc` oraz włączeniu listowania błedów `-Wall -Wextra` w celach porównawczych.
+Tak jak wspomniałem wcześniej, flaga ta jest dostępna tylo w `clang`, dlatego też kompiluje za pomocą tego kompilatora. Program skompilwoałem jedank również przy użyciu `gcc` oraz włączeniu listowania błedów `-Wall -Wextra` w celach porównawczych.
 
 Błędem w tej aplikacji jest nie inicializowanie zmiennej `b`. Do programu podajemy input w postaci liczby całkowitej. Jeżeli ta wartośc jest równa `1` zmienna jest inicjalizowana. W przeciwnym przypadku zmienna nie zostanie zainicjalizowana. Jest to sytuacja której należy unikać.
 
-Kompilator `gcc` wraz w wyżej wspomnianą flagą nie zauważa tego błedu. Kompilując program z flagą `-fsanitize=memory` otrzymujemy warning, że zmienna nie jest inicjalizowana. Dostajemy stack trace. Należy jednak zuważyć, że bład ten dostajemy dopiero wtedy, kiedy nie zainicjujemy zmiennej - nie dostaniemy ostrzezenia jeżeli podamy input w postaci `1`.
+Kompilator `gcc` wraz w wyżej wspomnianą flagą nie zauważa tego błędu. Kompilując program z flagą `-fsanitize=memory` otrzymujemy warning, że zmienna nie jest inicjalizowana. Dostajemy backtrace. Należy jednak zuważyć, że błąd ten dostajemy dopiero wtedy, kiedy nie zainicjujemy zmiennej - nie dostaniemy ostrzezenia jeżeli podamy input w postaci `1`.
 
-Poniżej znajduje się zrzut ekranu zawierający powyższe stwierdzenia. Po lewej stronie znajduje się kod skompilowany przez `gcc`, z prawej natomiast przez `clang` fraz z `-fsanitize=memory`.
+Poniżej znajduje się zrzut ekranu opisanej powyżej sytuacji. Po lewej stronie znajduje się kod skompilowany przez `gcc`, z prawej natomiast przez `clang` fraz z `-fsanitize=memory`.
 
 
 ![](pictures/memory.png)
@@ -178,7 +178,7 @@ W tym przypadku mamy doczynienia z tak zwanym race condition. Tworzona jest zmie
 
 ## 3.4 `-fsanitize=undefined`
 
-Poniżej przedstawię tylko 2 przypadki źle napisanego kodu. Flag dotyczących tego przypadku jest więcej, a można je wszystkie znaleźć w [manualu gcc](https://gcc.gnu.org/onlinedocs/gcc-7.3.0/gcc/Instrumentation-Options.html).
+Poniżej przedstawię tylko 2 przypadki źle napisanego kodu. Flag dotyczących -fsanitize=undefined jest więcej, a można je wszystkie znaleźć w [manualu gcc](https://gcc.gnu.org/onlinedocs/gcc-7.3.0/gcc/Instrumentation-Options.html).
 
 ------
 Pliki:
@@ -198,7 +198,7 @@ int main(void)
 }
 ```
 
-Powyżej znajduje się funkcja w której od razu można zauważyć błąd - występuje integer overflow. Wartośc jest zbyt duża aby był w stanie pomieścić ją int. Dzięki użyciu dlagi `-fsanitize=undefined` jeśmy wstanie po uruchomieniu aplikacji zauważyć ten bład. Kompilator nie ostrzega nas przed taką sytuacją. 
+Powyżej znajduje się funkcja w której od razu można zauważyć błąd - występuje integer overflow. Wartośc jest zbyt duża aby był w stanie pomieścić ją int. Dzięki użyciu flagi `-fsanitize=undefined` jesteśmy w stanie po uruchomieniu aplikacji zauważyć ten błąd. Kompilator nie ostrzega nas przed taką sytuacją. 
 
 ![](pictures/undefined-1.png)
 
@@ -216,6 +216,10 @@ int main(void)
 
 
 Powyższy kod to kunszt domorosłego programisty - dzielenie przez zero. Faktem jest jednak że często występują sytuacje w których coś takiego może nastąpić. Wówczas zostajemy powiadomieni o tym poprzez warning. Ważne jest tez to, że dostajemy miejsce w którym taka sytacja miała miejsce.
+
+## 4. Podsumowanie
+
+Uzwywanie sanitizerów jest dość nową opcją ale jednocześnie dającą wiele możliwośći. Pod pewnymi względami używanie sanitizerów jest lepsze niż valgrind. Sanitizery potrafią być pomocne, gdyż często sam kompilator nie widzi pewnych błędów, a program pomimo będu będzie zachowywać się poprawnie.
 
 
 ## Źródła
