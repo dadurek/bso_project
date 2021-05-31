@@ -203,3 +203,9 @@ Relro jest prostym sposobem zabezpieczania aplikacji przed exploitacją. Chroni 
 
 `Partial` relro powinno być stosowane zawsze, nie powiniśmy go wyłączać gdyż nie wprowadza on problemów z wydajnością a jedynie zwiększa bezpieczeństwo. `Full` relro jest natomiast opcją nad którą należy się zastanowić, gdyż przez fakt, że czas startu aplikacji może być wydłużony jest opcją stosunkowo kosztowną.
 
+
+## Źródła
+
+* https://www.redhat.com/en/blog/hardening-elf-binaries-using-relocation-read-only-relro
+* https://hockeyinjune.medium.com/relro-relocation-read-only-c8d0933faef3
+* https://ctf101.org/binary-exploitation/relocation-read-only/
