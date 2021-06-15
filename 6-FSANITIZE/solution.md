@@ -30,9 +30,9 @@ Plik:
 int main(int argc, char** argv)
 {
     char * buffer = malloc(1024);
-	sprintf(buffer, "%d", argc);
-	printf("%s",buffer);
-	return EXIT_SUCCESS;
+    sprintf(buffer, "%d", argc); 
+    printf("%s",buffer);
+    return EXIT_SUCCESS;
 }
 ```
 
