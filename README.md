@@ -2,7 +2,9 @@
 
 ## Temat
 
-Tematem projektu jest `Badanie rozwiązań chroniących natywne aplikacje działająwce w trybie użytkownika`.
+EN: The topic of the project is `Researching solutions to protect native user-mode applications`.
+
+PL: Tematem projektu jest `Badanie rozwiązań chroniących natywne aplikacje działające w trybie użytkownika`.
 
 ## Struktura
 
